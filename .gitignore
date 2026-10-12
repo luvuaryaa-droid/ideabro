@@ -20,3 +20,12 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# Vibe projects: inputs, intermediates, renders and personal data stay local
+projects/*/raw/
+projects/*/work/
+projects/*/out/
+projects/*/data/
+*.csv
+*.xlsx
+*.onnx

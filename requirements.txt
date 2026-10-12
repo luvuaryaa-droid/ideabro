@@ -1,1 +1,11 @@
+# Vibe Editing System toolkit (same set as: doctor.py --kit all --install)
+numpy
+scipy
+Pillow
+imageio-ffmpeg
+skia-python          # Linux also needs: sudo apt install libegl1 libgl1
 faster-whisper>=1.1
+kokoro-onnx
+soundfile
+opencv-python-headless
+rembg[cpu]

@@ -1,100 +1,89 @@
 # Vibe Editing System · Ideabro Studio
 
-**Let Claude edit your videos.** Claude Code + HyperFrames · Whisper · FFmpeg · no editing app.
+**Direct the vibe. Let AI do the keyframes.**
 
-Film yourself talking, drop the file in a folder and tell Claude what you want on screen.
-Claude listens to every word (Whisper), looks at your frames (FFmpeg), plans the edit, builds it
-as code with [HyperFrames](https://github.com/heygen-com/hyperframes) and renders an MP4.
-The full guide is in [`docs/vibe-editing-system.md`](docs/vibe-editing-system.md).
+Claude Code makes your videos in code: motion graphics, VFX on real footage, AI-footage films, handmade-style
+animation, sound design, and hundreds of personalised videos from a spreadsheet. You describe what you want,
+approve a plan and a few stills, and Claude renders the MP4.
 
-```
-01 You film → 02 Claude listens → 03 Claude looks → 04 Claude builds → 05 You review, Claude renders
-```
+## The six skills
 
-## What's in this repo
+Claude picks the right one from what you ask (rules in `CLAUDE.md`). They live in `.claude/skills/`.
 
-| Path | What it is |
-| --- | --- |
-| `CLAUDE.md` | Rules Claude reads every session: the edit loop and your **house style** (names, colors, safe zone). Edit the "House style" section to match your brand. |
-| `.claude/settings.json` | Registers the HyperFrames plugin for this folder, so Claude Code offers to install it. |
-| `prompts/PROMPTS.md` | Every prompt from the guide, ready to paste. |
-| `scripts/check_setup.py` | Checks Node.js, FFmpeg, Python, Whisper, Claude Code (+ `--doctor`). |
-| `scripts/new_video.py` | Creates `videos/<name>/` as a HyperFrames project and copies your take in. |
-| `scripts/transcribe.py` | Ears: word-by-word transcript → `take.words.json`. |
-| `scripts/frames.py` | Eyes: still frames (1 per second, or at given times). |
-| `setup/` | One-time install scripts for Mac and Windows. |
-| `brand/` `refs/` `music/` `sfx/` | Your logo, style references, music and sound effects. |
-| `videos/` | One folder per edit. |
+| Skill | Makes |
+|---|---|
+| `vibe-motion-graphics` | showreels, explainers, kinetic type, logo reveals, animated charts, transparent lower-third / title packs, quote posts, loops |
+| `vibe-bulk-videos` | one template → many videos: CSV personalisation, every format, every language, content series, ad variants |
+| `vibe-audio-videos` | original music & SFX, AI voiceover (incl. Hindi), voice clean-up, audiograms, visualisers, beat-synced edits |
+| `vibe-vfx` | background removal, text behind you, layer splits, tracking, particles, cinematic grade, slow-mo, "say it and it happens" |
+| `vibe-ai-footage` | Veo / Sora / Kling / Runway clips → a film that doesn't look AI; faceless YouTube / Shorts |
+| `vibe-stylised-animation` | claymation, crayon, paper-cut, whiteboard, mascots, kids' stories, generative art |
 
-Footage, audio and renders are git-ignored, so they stay on your computer.
+Talking-head reels can also be edited the HyperFrames way: see [`docs/vibe-editing-system.md`](docs/vibe-editing-system.md)
+and `prompts/PROMPTS.md`.
 
-## 1 · Install it once (about 15 minutes)
+Everything is generated locally: music and sound effects are synthesised by `audio_kit`, voices come from Kokoro,
+fonts from Google Fonts (OFL). No stock assets, no Content ID claims.
 
-You need: Claude Code (Claude Pro or higher), Node.js 22+, FFmpeg, Python 3 and Whisper.
-HyperFrames downloads its own Chrome for rendering.
+## Install once
 
-**Mac** (with [Homebrew](https://brew.sh)):
+You need **Python 3.9+**, **FFmpeg**, **Node.js 22+** (only for HyperFrames / WebGL scenes) and **Claude Code**.
 
 ```bash
+# Mac
 bash setup/install-mac.sh
-```
-
-**Windows** (PowerShell):
-
-```powershell
+# Windows (PowerShell)
 powershell -ExecutionPolicy Bypass -File setup\install-windows.ps1
 ```
 
-<details><summary>Or by hand</summary>
+Then install the toolkit and check it:
 
 ```bash
-# Claude Code
-curl -fsSL https://claude.ai/install.sh | bash        # Mac
-irm https://claude.ai/install.ps1 | iex               # Windows
-
-# Node.js, FFmpeg, Python
-brew install node ffmpeg python                       # Mac
-winget install OpenJS.NodeJS.LTS                      # Windows
-winget install Gyan.FFmpeg
-winget install Python.Python.3.13
-
-# Whisper
-python -m pip install -r requirements.txt             # faster-whisper (both)
-brew install whisper-cpp                              # Mac: lets HyperFrames transcribe on its own
-
-# HyperFrames plugin for Claude
-claude plugin marketplace add heygen-com/hyperframes
-claude plugin install hyperframes@hyperframes
+python3 -m pip install -r requirements.txt          # Linux also: sudo apt install libegl1 libgl1
+python3 .claude/skills/vibe-vfx/scripts/doctor.py --kit all
 ```
-</details>
 
-Then open a **new terminal** and check:
+The first AI voiceover downloads the Kokoro model (~330 MB); the first cutout downloads a matte model;
+the first transcription downloads a Whisper model. In Claude Code cloud sessions `.claude/hooks/session-start.sh`
+reinstalls everything automatically.
+
+## Make a video
+
+1. Start Claude Code in this folder (`claude`) and say what you want, e.g.
+   *"Make a 20-second 9:16 logo reveal for Ideabro with a hype soundtrack."*
+2. Claude creates `projects/<name>/` and fills `brief.md` with you. Drop footage, logos and data into `raw/`.
+3. Approve the beat table, then the stills (style frames), then a fast draft.
+4. Say **"render it"**. Deliverables land in `projects/<name>/out/`, exported per platform.
+
+By hand, the same steps are:
 
 ```bash
-python scripts/check_setup.py --doctor
+python3 .claude/skills/vibe-motion-graphics/scripts/new_project.py projects/my-reel --kind motion --format 9:16 --duration 20
+cd projects/my-reel
+python3 scene.py stills      # check frames
+python3 scene.py audio       # music + SFX
+python3 scene.py draft       # half-res preview
+python3 scene.py render      # final
+python3 vibe/export.py out/my-reel.mp4 --preset reels,youtube
 ```
 
-Or let Claude do it: open Claude Code in this folder and paste the "Let Claude install the rest"
-prompt from `prompts/PROMPTS.md`.
+## Repo layout
 
-## 2 · Make your first edit
-
-1. Film one take (tripod, light on your face, quiet room, 2 seconds of the empty room at the end).
-2. Create the project:
-   ```bash
-   python scripts/new_video.py my-first-reel --take path/to/your-video.mp4
-   ```
-3. Start Claude Code in this folder (`claude`) and paste the **First prompt** from
-   `prompts/PROMPTS.md`, then **Plan first**, then **Captions** and **Cut the dead air**.
-4. Watch the preview in your browser, send notes with times ("At 0:07 ..."), then say **"render it"**.
+| Path | What it is |
+|---|---|
+| `CLAUDE.md` | Studio rules: skill routing, the Vibe Loop, Ideabro house style |
+| `.claude/skills/` | The six Vibe Editing skills (each with `scripts/`, `reference/`, `templates/`) |
+| `.claude/hooks/session-start.sh` | Reinstalls the toolkit in cloud sessions |
+| `projects/` | One folder per video (footage, work files and renders stay out of git) |
+| `docs/`, `prompts/`, `scripts/`, `videos/` | The HyperFrames talking-head workflow from the original guide |
+| `brand/`, `refs/`, `music/`, `sfx/` | Shared logos, style references and audio you own |
 
 ## Habits
 
-- One change per message, always with the time.
+- Approve the plan before the build, and stills before the render.
+- One change per message, with the time ("at 0:07").
 - Say what you want to see, not how to code it.
-- Approve the plan before the build. Rough cut first, effects after.
-- Ask Claude to save a version before each round of notes.
-- If something fails: `python scripts/check_setup.py --doctor` and paste the error to Claude.
+- Personal data (CSVs for bulk videos) never gets committed.
 
 ---
 
