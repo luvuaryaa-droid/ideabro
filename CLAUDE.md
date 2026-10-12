@@ -17,10 +17,14 @@ and follow its steps. Each skill's `scripts/`, `reference/` and `templates/` are
 | Effects on real footage: background removal/replacement, text behind subject, layers, tracking, particles, cinematic look, slow-mo, split screen, "say it and it happens" | `vibe-vfx` |
 | AI-generated clips (Veo, Sora, Kling, Runway…) or mixed stock → a film that doesn't look AI; faceless channels | `vibe-ai-footage` |
 | Handmade looks: claymation, crayon, paper-cut, whiteboard/doodle, mascots and characters, kids' stories, generative art | `vibe-stylised-animation` |
-| Talking-head reel edited the HyperFrames way (captions, zooms, pop-ups on a phone take) | HyperFrames: `/hyperframes` + `docs/vibe-editing-system.md` |
+| Someone talking to camera: Reels/TikToks/Shorts from a take, cut silences/ums/retakes, jump cuts, word-by-word captions, podcast → clips, YouTube long-form, testimonials, course lessons | `vibe-talking-head` |
+| Marketing: promo reels, product/course launches, feature announcements, social ads + variants, SaaS demos with rebuilt UI, product videos, event teasers | `vibe-launch-ads` |
 
 A request can use more than one skill (e.g. a VFX edit with a motion-graphics end card). The skills share one
 toolkit, so tools combine freely.
+
+HyperFrames (`/hyperframes`, the original guide in `docs/vibe-editing-system.md`) remains installed as an
+alternative HTML-based engine. Use it only when the person asks for it.
 
 ## Projects
 
@@ -62,7 +66,8 @@ Run every tool from inside the project folder: `python3 vibe/<tool>.py`, `python
   Cloud sessions run `.claude/hooks/session-start.sh` automatically.
 - Linux needs `libegl1 libgl1` for skia (the hook installs them).
 - **Transcription (faster-whisper) downloads its model from huggingface.co.** If that host is blocked, word timings,
-  karaoke captions and "say it and it happens" cues are unavailable. Say so; don't fake timings.
+  captions, filler/retake removal (`cut_silence.py` falls back to cutting by audio level) and "say it and it
+  happens" cues are unavailable. Say so; don't fake timings.
 - Hindi/Devanagari: `motion_kit.text()` draws unshaped text, which breaks conjunct letters. For complex scripts,
   draw with `skia.textlayout` (Paragraph API) and check the stills.
 - Personal data (bulk CSVs) never gets committed.

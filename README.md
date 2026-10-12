@@ -3,15 +3,17 @@
 **Direct the vibe. Let AI do the keyframes.**
 
 Claude Code makes your videos in code: motion graphics, VFX on real footage, AI-footage films, handmade-style
-animation, sound design, and hundreds of personalised videos from a spreadsheet. You describe what you want,
+animation, talking-head edits, launch ads, sound design, and hundreds of personalised videos from a spreadsheet. You describe what you want,
 approve a plan and a few stills, and Claude renders the MP4.
 
-## The six skills
+## The eight skills
 
 Claude picks the right one from what you ask (rules in `CLAUDE.md`). They live in `.claude/skills/`.
 
 | Skill | Makes |
 |---|---|
+| `vibe-talking-head` | Reels/TikToks/Shorts from a raw take: silences, ums and retakes cut, jump cuts, pop captions; podcast → clips; YouTube long-form; testimonials; course lessons |
+| `vibe-launch-ads` | promo reels, launches, social ads with hook/CTA variants in every format, SaaS demos with rebuilt UI, product videos, event teasers |
 | `vibe-motion-graphics` | showreels, explainers, kinetic type, logo reveals, animated charts, transparent lower-third / title packs, quote posts, loops |
 | `vibe-bulk-videos` | one template → many videos: CSV personalisation, every format, every language, content series, ad variants |
 | `vibe-audio-videos` | original music & SFX, AI voiceover (incl. Hindi), voice clean-up, audiograms, visualisers, beat-synced edits |
@@ -19,8 +21,8 @@ Claude picks the right one from what you ask (rules in `CLAUDE.md`). They live i
 | `vibe-ai-footage` | Veo / Sora / Kling / Runway clips → a film that doesn't look AI; faceless YouTube / Shorts |
 | `vibe-stylised-animation` | claymation, crayon, paper-cut, whiteboard, mascots, kids' stories, generative art |
 
-Talking-head reels can also be edited the HyperFrames way: see [`docs/vibe-editing-system.md`](docs/vibe-editing-system.md)
-and `prompts/PROMPTS.md`.
+The original HyperFrames workflow ([`docs/vibe-editing-system.md`](docs/vibe-editing-system.md), `prompts/PROMPTS.md`)
+is still installed as an alternative engine.
 
 Everything is generated locally: music and sound effects are synthesised by `audio_kit`, voices come from Kokoro,
 fonts from Google Fonts (OFL). No stock assets, no Content ID claims.
@@ -72,10 +74,10 @@ python3 vibe/export.py out/my-reel.mp4 --preset reels,youtube
 | Path | What it is |
 |---|---|
 | `CLAUDE.md` | Studio rules: skill routing, the Vibe Loop, Ideabro house style |
-| `.claude/skills/` | The six Vibe Editing skills (each with `scripts/`, `reference/`, `templates/`) |
+| `.claude/skills/` | The eight Vibe Editing skills (each with `scripts/`, `reference/`, `templates/`) |
 | `.claude/hooks/session-start.sh` | Reinstalls the toolkit in cloud sessions |
 | `projects/` | One folder per video (footage, work files and renders stay out of git) |
-| `docs/`, `prompts/`, `scripts/`, `videos/` | The HyperFrames talking-head workflow from the original guide |
+| `docs/`, `prompts/`, `scripts/`, `videos/` | The original HyperFrames workflow (alternative engine) |
 | `brand/`, `refs/`, `music/`, `sfx/` | Shared logos, style references and audio you own |
 
 ## Habits
