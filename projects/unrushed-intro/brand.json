@@ -1,31 +1,23 @@
 {
-  "name": "YOUR BRAND",
-  "product": "Vibe Editing System",
-  "tagline": "",
+  "name": "The Unrushed Whispers",
+  "tagline": "@the_unrushed.whispers",
   "colors": {
-    "ink": "#0B0B0D",
-    "paper": "#F2EEE3",
-    "white": "#FFFFFF",
-    "lime": "#D4FF3F",
-    "periwinkle": "#C4C6FF",
-    "blush": "#FFCFD8",
-    "ice": "#C8F0EC",
-    "orange": "#FF5A1F"
+    "ink": "#2E2A26",
+    "paper": "#EFE6D6",
+    "white": "#FBF8F2",
+    "lime": "#E3A83A",
+    "periwinkle": "#4E8B8C",
+    "blush": "#E8C4B0",
+    "ice": "#B8C548",
+    "orange": "#C0623B"
   },
-  "roles": {
-    "bg": "paper",
-    "fg": "ink",
-    "accent": "lime",
-    "accent2": "periwinkle",
-    "caption": "white",
-    "caption_hi": "lime"
-  },
+  "roles": {"bg": "paper", "fg": "ink", "accent": "lime", "accent2": "periwinkle", "caption": "ink", "caption_hi": "orange"},
   "fonts": {
-    "display": "Unbounded:900",
-    "impact": "Anton",
-    "body": "Inter Tight:400,700",
-    "mono": "JetBrains Mono:700",
+    "display": "Caveat:700",
+    "impact": "Caveat:700",
+    "body": "Caveat:500",
+    "mono": "Caveat:500",
     "serif": "Instrument Serif:400"
   },
-  "_todo": "Replace colors/fonts with the client's brand. Keep the role names (bg, fg, accent...)."
+  "_note": "Palette sampled by eye from the artist's own work: cream paper, ink, ochre (portrait sketch), teal + chartreuse (cat sketch), terracotta. lime=ochre, periwinkle=teal, ice=chartreuse, orange=terracotta."
 }

@@ -1,67 +1,93 @@
-"""timeline: the single source of truth for projects/unrushed-intro.
+"""timeline: The Unrushed Whispers, 500-follower re-introduction (16:9, 50 s).
 
-Picture (scene.py) and sound (audio cues) both read from here, so a change of timing
-moves the cut, the animation and the sound effect together. Never hard-code a time
-anywhere else.
+The voiceover is built phrase by phrase (build_vo.py -> work/vo.json), so every phrase has an exact start/end.
+Shots and captions are anchored to those phrases; nothing is guessed.
 """
 
+import json
 import os
+from pathlib import Path
 
-W, H = 1920, 1080          # 16:9
-# render other formats without editing: VIBE_SIZE=1080x1080 python3 scene.py render
-# (Windows PowerShell: $env:VIBE_SIZE="1080x1080"; py scene.py render)
+W, H = 1920, 1080
 if os.environ.get("VIBE_SIZE"):
     W, H = (int(v) for v in os.environ["VIBE_SIZE"].lower().split("x"))
 FPS = 24
-DURATION = 50       # seconds
-BPM = 120                     # music tempo; cuts land on beats
-BEAT = 60.0 / BPM
-BAR = 4 * BEAT
-MOOD = "upbeat"               # audio_kit moods: upbeat, hype, chill, corporate, cinematic, playful, tech
+DURATION = 50.0
+VO_START = 1.2            # voice enters after a breath of music
+MOOD = "chill"            # soft lo-fi bed, 84 BPM
+BPM = 84
+MUSIC_SEED = 11
+
+_vo = json.loads((Path(__file__).resolve().parent / "work" / "vo.json").read_text())
+PHRASES = {p["id"]: (p["s"] + VO_START, p["e"] + VO_START, p["text"]) for p in _vo["phrases"]}
 
 
-def beat(n):
-    """time of beat n (0-based)."""
-    return n * BEAT
+def ps(pid):
+    return PHRASES[pid][0]
 
 
-# (start, end, scene name). Keep scenes on bar lines when there is music.
-SCENES = [
-    (0.0, beat(4), "hook"),
-    (beat(4), beat(8), "message"),
-    (beat(8), DURATION, "endcard"),
+def pe(pid):
+    return PHRASES[pid][1]
+
+
+# (start, end, shot). Cuts sit in the pauses between phrases.
+SHOTS = [
+    (0.0, 4.25, "title"),
+    (4.25, 10.3, "five_hundred"),
+    (10.3, 12.55, "banker"),
+    (12.55, 16.28, "art"),
+    (16.28, 18.38, "rain"),
+    (18.38, 20.8, "sun"),
+    (20.8, 27.6, "belief"),
+    (27.6, 29.98, "journey"),
+    (29.98, 31.52, "sketchbooks"),
+    (31.52, 33.12, "artist_dates"),
+    (33.12, 38.7, "artists_way"),
+    (38.7, 42.4, "thanks"),
+    (42.4, DURATION, "end"),
 ]
+XFADE = 0.45              # gentle dissolve between shots
 
-# on-screen copy lives here too, so Claude edits words in one place
+# Captions = the spoken phrases. The belief shot writes its words on screen, so no caption there.
+NO_CAPTION = {"beliefa", "beliefb"}
+CAPTIONS = [(s, e, txt) for pid, (s, e, txt) in PHRASES.items() if pid not in NO_CAPTION]
+
 COPY = {
-    "hook": ["DIRECT", "THE", "VIBE"],
-    "chips": ["CUTS", "CAPTIONS", "MOTION", "MUSIC"],
-    "end_title": "VIBE EDITING",
-    "cta": "ENROLL NOW",
+    "title": "the unrushed whispers",
+    "title_sub": "a re-introduction",
+    "five_hundred": "500",
+    "five_hundred_sub": "followers",
+    "belief1": "creativity is an",
+    "belief2": "antidote to anxiety",
+    "belief3": "& the highest form of healing",
+    "book1": "The Artist's Way",
+    "book2": "Julia Cameron",
+    "handle": "@the_unrushed.whispers",
+    "end_line": "share it with someone who needs it",
 }
 
-# sound effects: (time, kind, gain_db). Kinds: python3 vibe/audio_kit.py sfx --list
-SFX = [
-    (0.0, "impact", -4),
-    (beat(4) - 0.35, "whoosh", -8),
-] + [(beat(4) + 0.25 + i * BEAT / 2, "pop", -9) for i in range(4)] + [
-    (beat(8) - 0.35, "whoosh", -8),
-    (beat(8) + 0.1, "sparkle", -10),
-]
+# Footage clips cut from the artist's own videos (work/clips, see brief.md for in/out points).
+CLIPS = {
+    "sun": "work/clips/sun.mp4", "trail": "work/clips/trail.mp4", "bridge": "work/clips/bridge.mp4",
+    "sign": "work/clips/sign.mp4", "seeds": "work/clips/seeds.mp4", "rain": "work/clips/rain.mp4",
+    "page_glasses": "work/clips/page_glasses.mp4", "page_tulips": "work/clips/page_tulips.mp4",
+    "page_figs": "work/clips/page_figs.mp4", "page_hat": "work/clips/page_hat.mp4",
+    "page_mosaic": "work/clips/page_mosaic.mp4",
+}
 
 
-def scene_at(t):
-    for s, e, name in SCENES:
+def shot_at(t):
+    for s, e, name in SHOTS:
         if s <= t < e:
-            return name, t - s, e - s
-    s, e, name = SCENES[-1]
-    return name, t - s, e - s
+            return name, s, e
+    s, e, name = SHOTS[-1]
+    return name, s, e
 
 
-def cues(voice=None, music="work/music.wav"):
-    """cues.json payload for: python3 vibe/audio_kit.py mix work/cues.json"""
-    c = {"duration": DURATION, "music": {"file": music, "gain_db": -9, "duck_db": -10, "fade_out": 1.2},
-         "sfx": [{"t": round(t, 3), "kind": k, "gain_db": g} for t, k, g in SFX]}
-    if voice:
-        c["voice"] = {"file": voice, "gain_db": 0}
-    return c
+def cues(voice="work/vo.wav", music="work/music.wav"):
+    return {"duration": DURATION,
+            "voice": {"file": voice, "gain_db": 0, "t": VO_START},
+            "music": {"file": music, "gain_db": -11, "duck_db": -8, "fade_out": 3.0},
+            "tracks": [{"file": "work/crackle.wav", "t": 0.0, "gain_db": -6}],
+            "sfx": [{"t": round(ps("k500a") - 0.2, 3), "kind": "sparkle", "gain_db": -20},
+                    {"t": round(ps("thanks") - 0.15, 3), "kind": "sparkle", "gain_db": -20}]}
