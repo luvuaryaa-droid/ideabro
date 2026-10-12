@@ -1,0 +1,22 @@
+# Footage, renders and generated media stay on your computer, not in git.
+*.mp4
+*.mov
+*.m4v
+*.mkv
+*.webm
+*.avi
+*.wav
+*.mp3
+*.m4a
+*.aac
+frames/
+renders/
+snapshots/
+
+# Tooling
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
