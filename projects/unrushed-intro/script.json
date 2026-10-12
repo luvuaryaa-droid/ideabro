@@ -1,0 +1,21 @@
+[
+ ["hello",     "Hi, and welcome to The Unrushed Whispers.", 0.6],
+ ["k500a",     "We've just crossed five hundred followers,", 0.15],
+ ["k500b",     "so it's time I properly introduced myself.", 0.7],
+ ["banker",    "By day, I'm a banker.", 0.5],
+ ["arta",      "But I'm finally pursuing art,", 0.15],
+ ["artb",      "my lifelong dream,", 0.2],
+ ["artc",      "to fight depression and anxiety,", 0.15],
+ ["artd",      "and for my overall well-being.", 0.7],
+ ["beliefa",   "I firmly believe creativity is an antidote to anxiety,", 0.2],
+ ["beliefb",   "and the highest form of healing.", 0.8],
+ ["journey",   "So I'm taking you on a journey:", 0.3],
+ ["sketch",    "into my sketchbooks,", 0.2],
+ ["dates",     "on my artist dates,", 0.2],
+ ["booka",     "and through my learnings", 0.1],
+ ["bookb",     "from The Artist's Way by Julia Cameron,", 0.15],
+ ["bookc",     "and books like it.", 0.8],
+ ["thanks",    "Thank you, truly, for supporting my page.", 0.6],
+ ["sharea",    "If you like it,", 0.1],
+ ["shareb",    "share it with someone who needs it.", 0.0]
+]
