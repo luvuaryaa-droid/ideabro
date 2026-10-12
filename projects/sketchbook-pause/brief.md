@@ -5,8 +5,11 @@
 - **Purpose:** showcase the daily sketchbook spread (alarm clock + egg on toast, collage background)
 - **On-screen words (handwritten, no voice, no captions):** "Pause.." · "take a deep breath" · "you are blessed." ·
   "if you like it, follow for daily sketchbook inspiration" · small @the_unrushed.whispers
-- **Music:** original soft solo piano (`piano.py`: F major, 66 BPM, broken chords + reverb), −14 LUFS
+- **Music:** original soft solo piano (`piano.py`, v2: D major, 60 BPM, sparse chords + melody), −14 LUFS
 - **Art:** shown exactly as photographed (raw/page_clock.jpg, raw/page_toast.jpg, raw/spread.jpg), no filters
+
+## v2 (current)
+Full-bleed camera move through the pages, serif type, light leaks.
 
 | time | picture | words |
 |---|---|---|

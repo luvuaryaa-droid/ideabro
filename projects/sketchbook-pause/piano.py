@@ -1,6 +1,6 @@
 """piano: original soft solo piano for the sketchbook reel (no drums, no samples).
 
-    python3 piano.py [seconds] [seed]   -> work/piano.wav
+    python3 piano.py [seconds] [seed] [F|D]   -> work/piano.wav
 
 Additive piano tone (slightly stretched partials, two detuned strings, hammer softness), slow broken chords
 in F major (Fmaj7 - Dm9 - Bbmaj7 - Csus/F), a sustained left hand, and a long soft room reverb.
@@ -65,12 +65,21 @@ def main():
     seconds = float(sys.argv[1]) if len(sys.argv) > 1 else 12.5
     seed = int(sys.argv[2]) if len(sys.argv) > 2 else 3
     rng = np.random.default_rng(seed)
-    beat = 60 / 66                                        # unhurried, 66 BPM
-    # (bass, upper chord tones) in F major, one chord per bar
-    prog = [(41, [60, 64, 65, 69, 72]),                   # Fmaj7
-            (38, [57, 60, 62, 65, 69]),                   # Dm9
-            (34, [58, 62, 65, 69, 70]),                   # Bbmaj7
-            (41, [60, 65, 67, 72, 77])]                   # Csus over F (resolving home)
+    key = sys.argv[3] if len(sys.argv) > 3 else "F"
+    if key == "D":                                        # v2 piece: D major, slower and sparser, with a melody
+        beat = 60 / 60
+        prog = [(38, [62, 66, 69, 73, 74]),               # Dmaj7
+                (35, [59, 62, 66, 69, 71]),               # Bm7
+                (31, [59, 62, 66, 67, 71]),               # Gmaj7
+                (33, [57, 62, 64, 69, 76])]               # Asus
+        melody = [(0.0, 78), (2.0, 76), (4.0, 74), (5.5, 73), (8.0, 71), (10.0, 74), (11.0, 73)]
+    else:
+        beat = 60 / 66                                    # v1 piece: F major, 66 BPM
+        prog = [(41, [60, 64, 65, 69, 72]),               # Fmaj7
+                (38, [57, 60, 62, 65, 69]),               # Dm9
+                (34, [58, 62, 65, 69, 70]),               # Bbmaj7
+                (41, [60, 65, 67, 72, 77])]               # Csus over F (resolving home)
+        melody = []
     n = int((seconds + 3.0) * SR)
     buf = np.zeros(n, np.float32)
     bar = 4 * beat
@@ -82,10 +91,17 @@ def main():
         place(buf, piano_note(bass, 4.5, 0.42, seed + b), tb, 0.9)
         place(buf, piano_note(bass + 12, 4.0, 0.3, seed + 10 + b), tb + 0.02, 0.5)
         pattern = [0, 2, 3, 4, 3, 2, 1, 2] if b % 2 == 0 else [0, 1, 3, 4, 2, 3, 1, 4]
-        for i, idx in enumerate(pattern):                 # gentle eighth-note broken chord, humanised
-            tt = tb + i * beat / 2 + rng.normal(0, 0.012)
+        step = beat / 2
+        if melody:                                        # sparser: quarter notes, fewer tones
+            pattern, step = [0, 1, 2, 3], beat
+        for i, idx in enumerate(pattern):                 # gentle broken chord, humanised
+            tt = tb + i * step + rng.normal(0, 0.012)
             vel = 0.30 + 0.08 * (i % 4 == 0) + rng.normal(0, 0.02)
             place(buf, piano_note(chord[idx], 2.6, max(0.18, vel), seed + 100 + b * 8 + i), tt, 0.75)
+    for mt, mn in melody:                                  # a quiet singing line on top
+        tt = t0 + mt * beat + rng.normal(0, 0.01)
+        if tt < seconds - 0.8:
+            place(buf, piano_note(mn, 3.2, 0.38, 500 + mn), tt, 0.85)
     end = t0 + 4 * bar                                     # final soft high note to close
     if end < seconds + 1:
         place(buf, piano_note(84, 3.0, 0.25, 999), min(end, seconds - 1.5), 0.5)

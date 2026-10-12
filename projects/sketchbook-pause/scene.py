@@ -1,11 +1,11 @@
-"""scene: daily sketchbook spread reel (3:4, 12 s). Every frame is a pure function of time t.
+"""scene: daily sketchbook spread reel v2 (3:4, 12 s). Every frame is a pure function of time t.
 
     python3 scene.py stills 1 4 7 11      # check frames -> out/stills/
     python3 scene.py audio                # soft piano -> work/mix.wav
     python3 scene.py render               # final -> out/sketchbook-pause.mp4
 
-The artist's pages are shown exactly as photographed (no filters, no cropping of the art), as prints on cream paper.
-Words are handwritten on screen (no voice, no captions).
+v2: full-bleed, cinematic. The camera travels through the artist's real pages (pixels untouched, only framed and
+moved), serif words fade in letter by letter, warm light leaks hide the cuts. No voice, no captions.
 """
 
 import json
@@ -17,9 +17,8 @@ from pathlib import Path
 import skia
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "vibe"))
-from motion_kit import (Stage, clamp, ease_in_out_cubic, ease_out_cubic, grain, lerp, prog, rgb, shadow, text,  # noqa: E402
-                        text_width, vignette)
-from toon_kit import draw_on, paper_texture, smooth_path, stepped, wobble_points  # noqa: E402
+from motion_kit import (Stage, clamp, ease_in_out_cubic, ease_out_cubic, grain, lerp, prog, rgb, shadow,  # noqa: E402
+                        text_width, typeface, vignette)
 
 import timeline as TL  # noqa: E402
 
@@ -27,120 +26,156 @@ S = Stage(TL.W, TL.H, fps=TL.FPS, duration=TL.DURATION)
 B = S.brand
 U = min(TL.W, TL.H) / 1080
 W, H, CX = TL.W, TL.H, TL.W / 2
-INK, OCHRE, TEAL, TERRA, BLUSH, LEAF = (rgb(B, r) for r in ("ink", "lime", "periwinkle", "orange", "blush", "ice"))
-PAPER = paper_texture(W, H, B["colors"]["paper"], grain=0.07)
+CREAM = rgb("#FBF3E6")
+GOLD = rgb("#F2C46B")
+NIGHT = rgb("#1C1410")
 IMG = {k: skia.Image.open(v) for k, v in TL.PAGES.items()}
-MARGIN = 0.06 * W          # feed safe zone: 6 % all round
+SAMPLING = skia.SamplingOptions(skia.CubicResampler.Mitchell())
+MARGIN = 0.06 * W
 
 
-# ------------------------------------------------------------------ helpers
-def write(c, s, x, y, size, font, col, k, alpha=1.0):
-    """Handwriting reveal, left to right, stepped like drawings."""
-    if k <= 0:
-        return
+# ------------------------------------------------------------------ camera
+def cam(c, img, fx, fy, zoom):
+    """Fill the frame with `img`, centred on (fx, fy) (fractions), `zoom` x cover. Returns page->screen mapping."""
+    iw, ih = img.width(), img.height()
+    s = max(W / iw, H / ih) * zoom
+    sw, sh = W / s, H / s
+    x0 = clamp(fx * iw - sw / 2, 0, iw - sw)
+    y0 = clamp(fy * ih - sh / 2, 0, ih - sh)
+    c.drawImageRect(img, skia.Rect.MakeXYWH(x0, y0, sw, sh), skia.Rect.MakeWH(W, H), SAMPLING)
+    return lambda px, py: ((px * iw - x0) * s, (py * ih - y0) * s)
+
+
+def bottom_shade(c, strength=0.55, start=0.55):
+    """Soft dark gradient at the bottom so cream words read over busy collage."""
+    p = skia.Paint(Shader=skia.GradientShader.MakeLinear(
+        [skia.Point(0, H * start), skia.Point(0, H)],
+        [skia.Color(28, 20, 16, 0), skia.Color(28, 20, 16, int(255 * strength))]))
+    c.drawRect(skia.Rect.MakeWH(W, H), p)
+
+
+# ------------------------------------------------------------------ type
+def reveal(c, s, cx, y, size, font, col, lt, t0, per=0.06, dur=0.6, rise=18):
+    """Serif line that fades in letter by letter, each letter rising slightly into place. Centred on cx."""
+    f = skia.Font(typeface(font), size)
+    f.setEdging(skia.Font.Edging.kAntiAlias)
     w = text_width(s, size, font)
-    c.save()
-    c.clipRect(skia.Rect.MakeXYWH(x - w / 2 - 20 * U, y - size, (w + 40 * U) * clamp(k), size * 2))
-    text(c, s, x, y, size=size, font=font, fill=col, alpha=alpha)
-    c.restore()
+    x = cx - w / 2
+    m = f.getMetrics()
+    base = y - (m.fAscent + m.fDescent) / 2
+    for i, ch in enumerate(s):
+        k = ease_out_cubic(prog(lt, t0 + i * per, dur))
+        adv = f.measureText(ch)
+        if k > 0 and ch != " ":
+            yy = base + (1 - k) * rise * U
+            sh = skia.Paint(Color=skia.Color(20, 12, 8, int(150 * k)), AntiAlias=True,
+                            MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, size * 0.06))
+            c.drawString(ch, x, yy + size * 0.03, f, sh)
+            p = skia.Paint(Color=col, AntiAlias=True)
+            p.setAlphaf(k)
+            c.drawString(ch, x, yy, f, p)
+        x += adv
+    return t0 + len(s) * per + dur          # time the line is complete
 
 
 def fit(s, font, max_size, max_w=W - 2 * MARGIN):
     return min(max_size, max_w / max(1e-6, text_width(s, 100, font)) * 100)
 
 
-def doodle(c, pts, col, width, k, ts, seed=0, closed=False):
-    if k <= 0:
+# ------------------------------------------------------------------ light
+def light_leak(c, t, amount):
+    """Warm film light leak: two soft radial glows drifting across, screen-blended."""
+    if amount <= 0:
         return
-    p = smooth_path(wobble_points(pts, 1.5 * U, ts, seed, closed), closed)
-    c.drawPath(draw_on(p, k), skia.Paint(Color=col, AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=width,
-                                         StrokeCap=skia.Paint.kRound_Cap, StrokeJoin=skia.Paint.kRound_Join, Alphaf=0.9))
+    for j, (bx, by, r, colr) in enumerate([(0.15, 0.25, 0.9, (255, 196, 128)), (0.85, 0.7, 0.75, (255, 150, 90))]):
+        cx = W * (bx + 0.25 * math.sin(t * 0.9 + j * 2))
+        cy = H * (by + 0.08 * math.cos(t * 0.7 + j))
+        shader = skia.GradientShader.MakeRadial(
+            skia.Point(cx, cy), H * r,
+            [skia.Color(*colr, int(255 * clamp(amount) * 0.85)), skia.Color(*colr, 0)])
+        c.drawRect(skia.Rect.MakeWH(W, H), skia.Paint(Shader=shader, BlendMode=skia.BlendMode.kScreen))
 
 
-def wavy(x0, x1, y, amp, n=14):
-    return [(lerp(x0, x1, i / n), y + amp * math.sin(i * 1.3)) for i in range(n + 1)]
+def leak_amount(t):
+    a = 0.0
+    for tc in (TL.SHOTS[1][0], TL.SHOTS[2][0]):
+        a = max(a, 1 - abs(t - tc) / (TL.LEAK / 2))
+    a = max(a, 0.3 * (1 - abs(t - (TL.SHOTS[2][0] + 0.6)) / 0.6))   # a gentle golden wash on "blessed"
+    return ease_in_out_cubic(clamp(a))
 
 
-def sparkle(c, x, y, r, col, k, ts, seed):
-    for a in range(4):
-        ang = a * math.pi / 4
-        doodle(c, [(x - r * math.cos(ang), y - r * math.sin(ang)), (x + r * math.cos(ang), y + r * math.sin(ang))],
-               col, 4 * U, k, ts, seed + a)
+# ------------------------------------------------------------------ shots: (c, t, lt, dur)
+def sh_pause(c, t, lt, dur):
+    k = ease_in_out_cubic(prog(lt, 0, dur + 0.3))
+    cm = TL.CAM["pause"]
+    (fx0, fy0), (fx1, fy1) = cm["focus"]
+    cam(c, IMG["clock"], lerp(fx0, fx1, k), lerp(fy0, fy1, k), lerp(*cm["zoom"], k))
+    bottom_shade(c, 0.5, 0.6)
+    reveal(c, TL.COPY["pause"], CX, H * 0.82, 190 * U, TL.SERIF, CREAM, lt, 0.7, per=0.09, dur=0.7)
 
 
-def tape(c, x, y, w, h, rot, col):
-    c.save()
-    c.translate(x, y)
-    c.rotate(rot)
-    c.drawRect(skia.Rect.MakeXYWH(-w / 2, -h / 2, w, h), skia.Paint(Color=col, Alphaf=0.6, AntiAlias=True))
-    c.restore()
+def sh_breathe(c, t, lt, dur):
+    breath = math.sin(math.pi * clamp(lt / 3.0))             # one slow breath: in, then out
+    cm = TL.CAM["breathe"]
+    to_screen = cam(c, IMG["toast"], *TL.YOLK, cm["zoom"][0] + TL.BREATH_ZOOM * breath)
+    yx, yy = to_screen(*TL.YOLK)
+    for j, (r0, a0) in enumerate([(150, 0.6), (210, 0.3)]):   # breathing rings around the yolk
+        r = (r0 + 120 * breath) * U
+        p = skia.Paint(Color=CREAM, AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=(6 - 2 * j) * U)
+        p.setAlphaf(a0 * ease_out_cubic(prog(lt, 0.2, 0.6)))
+        c.drawCircle(yx, yy, r, p)
+    bottom_shade(c, 0.6, 0.55)
+    s = fit(TL.COPY["breathe"], TL.SERIF, 120 * U)
+    reveal(c, TL.COPY["breathe"], CX, H * 0.84, s, TL.SERIF, CREAM, lt, 0.35, per=0.045, dur=0.6)
 
 
-def print_(c, img, cx, cy, w, rot=0.0, scale=1.0, alpha=1.0, tape_col=None):
-    """The page photo as a print: whole image (its own white mat included), soft shadow, washi tape."""
-    if alpha <= 0:
-        return
+def spread_card(c, cy, w, scale, alpha=1.0):
+    img = IMG["spread"]
     h = w * img.height() / img.width()
     c.save()
-    if alpha < 1:
-        c.saveLayerAlpha(None, int(255 * alpha))
-    c.translate(cx, cy)
-    c.rotate(rot)
+    c.translate(CX, cy)
     c.scale(scale, scale)
-    shadow(c, -w / 2, -h / 2, w, h, 6 * U, blur=24 * U, dy=14 * U, alpha=0.25)
-    c.drawImageRect(img, skia.Rect.MakeXYWH(-w / 2, -h / 2, w, h), skia.SamplingOptions(skia.FilterMode.kLinear))
-    if tape_col is not None:
-        tape(c, -w / 2 + 40 * U, -h / 2 + 6 * U, 130 * U, 36 * U, -36, tape_col)
-        tape(c, w / 2 - 40 * U, -h / 2 + 6 * U, 130 * U, 36 * U, 36, tape_col)
-    if alpha < 1:
-        c.restore()
+    shadow(c, -w / 2, -h / 2, w, h, 10 * U, blur=40 * U, dy=22 * U, alpha=0.5 * alpha)
+    p = skia.Paint()
+    p.setAlphaf(alpha)
+    c.drawImageRect(img, skia.Rect.MakeXYWH(-w / 2, -h / 2, w, h), SAMPLING, p)
     c.restore()
 
 
-def drift(lt, dur, amt=0.04):
-    return 1 + amt * ease_in_out_cubic(prog(lt, 0, dur + TL.XFADE))
+def sh_blessed(c, t, lt, dur):
+    bk = 1 + 0.06 * (1 - ease_out_cubic(prog(lt, 0, 3.0)))
+    c.save()
+    c.translate(CX, H / 2)
+    c.scale(bk, bk)
+    c.translate(-CX, -H / 2)
+    c.drawImage(IMG["spread_blur"], 0, 0)
+    c.restore()
+    k = ease_out_cubic(prog(lt, 0.05, 1.0))
+    spread_card(c, 600 * U, 960 * U, lerp(1.12, 1.0, k), alpha=k)
+    s = fit(TL.COPY["blessed"], TL.SERIF, 150 * U)
+    reveal(c, TL.COPY["blessed"], CX, 1130 * U, s, TL.SERIF, CREAM, lt, 0.55, per=0.06, dur=0.65)
 
 
-# ------------------------------------------------------------------ shots: (c, t, lt, dur, ts)
-def sh_pause(c, t, lt, dur, ts):
-    k = ease_out_cubic(prog(lt, 0, 0.9))
-    print_(c, IMG["clock"], CX, 560 * U, 860 * U, rot=-1.5, scale=lerp(1.03, 1.0, k) * drift(lt, dur), alpha=k,
-           tape_col=TEAL)
-    write(c, TL.COPY["pause"], CX, 1180 * U, 130 * U, "display", INK, ease_in_out_cubic(prog(lt, 0.6, 1.0)))
-
-
-def sh_breathe(c, t, lt, dur, ts):
-    breath = math.sin(math.pi * clamp(lt / 3.0))          # one slow breath: in, then out
-    k = ease_out_cubic(prog(lt, 0, 0.6))
-    print_(c, IMG["toast"], CX, 560 * U, 830 * U, rot=1.4, scale=(1 + 0.035 * breath), alpha=k, tape_col=OCHRE)
-    s = fit(TL.COPY["breathe"], "display", 104 * U)
-    write(c, TL.COPY["breathe"], CX, 1180 * U, s, "display", INK, ease_in_out_cubic(prog(lt, 0.35, 1.1)))
-    w = text_width(TL.COPY["breathe"], s, "display")
-    doodle(c, wavy(CX - w / 2, CX + w / 2, 1245 * U, 6 * U), TEAL, 6 * U, prog(lt, 1.5, 0.8), ts, seed=5)
-
-
-def sh_blessed(c, t, lt, dur, ts):
-    k = ease_out_cubic(prog(lt, 0, 0.7))
-    print_(c, IMG["spread"], CX, 600 * U, 980 * U, rot=-0.8, scale=lerp(0.97, 1.0, k), alpha=k, tape_col=BLUSH)
-    s = fit(TL.COPY["blessed"], "display", 130 * U)
-    write(c, TL.COPY["blessed"], CX, 1100 * U, s, "display", TERRA, ease_in_out_cubic(prog(lt, 0.4, 1.0)))
-    for i, (x, y) in enumerate([(170, 1010), (910, 1015), (870, 1190)]):
-        sparkle(c, x * U, y * U, 22 * U, OCHRE, prog(lt, 1.3 + 0.2 * i, 0.3), ts, seed=10 + 4 * i)
-
-
-def sh_follow(c, t, lt, dur, ts):
-    up = ease_in_out_cubic(prog(lt, 0, 0.8))               # the spread lifts to make room for the words
-    print_(c, IMG["spread"], CX, lerp(600, 470, up) * U, 980 * U, rot=-0.8, scale=lerp(1.0, 0.92, up),
-           tape_col=BLUSH)
-    y = 905 * U
-    write(c, TL.COPY["follow1"], CX, y, 74 * U, "body", INK, prog(lt, 0.15, 0.45))
-    s2 = fit(TL.COPY["follow3"], "display", 104 * U)
-    write(c, TL.COPY["follow2"], CX, y + 105 * U, s2, "display", INK, prog(lt, 0.55, 0.45))
-    write(c, TL.COPY["follow3"], CX, y + 215 * U, s2, "display", TERRA, prog(lt, 0.95, 0.6))
-    w3 = text_width(TL.COPY["follow3"], s2, "display")
-    doodle(c, wavy(CX - w3 / 2, CX + w3 / 2, y + 275 * U, 6 * U), OCHRE, 6 * U, prog(lt, 1.5, 0.5), ts, seed=30)
-    text(c, TL.COPY["handle"], CX, H - MARGIN - 20 * U, size=46 * U, font="body", fill=TEAL,
-         alpha=ease_out_cubic(prog(lt, 1.7, 0.5)))
+def sh_follow(c, t, lt, dur):
+    c.drawImage(IMG["spread_blur"], 0, 0)
+    up = ease_in_out_cubic(prog(lt, 0, 0.9))
+    spread_card(c, lerp(600, 450, up) * U, 960 * U, lerp(1.0, 0.86, up))
+    # "you are blessed." gently leaves as the closing words arrive
+    if lt < 0.6:
+        c.saveLayerAlpha(None, int(255 * (1 - prog(lt, 0, 0.5))))
+        s = fit(TL.COPY["blessed"], TL.SERIF, 150 * U)
+        reveal(c, TL.COPY["blessed"], CX, 1130 * U, s, TL.SERIF, CREAM, 99, 0)
+        c.restore()
+    y = 900 * U
+    reveal(c, TL.COPY["follow1"], CX, y, 66 * U, TL.SERIF, CREAM, lt, 0.4, per=0.035, dur=0.5)
+    s2 = fit(TL.COPY["follow3"], TL.SERIF_UP, 104 * U)
+    reveal(c, TL.COPY["follow2"], CX, y + 112 * U, s2, TL.SERIF_UP, CREAM, lt, 0.75, per=0.03, dur=0.5)
+    reveal(c, TL.COPY["follow3"], CX, y + 225 * U, s2, TL.SERIF, GOLD, lt, 1.1, per=0.03, dur=0.5)
+    hk = ease_out_cubic(prog(lt, 1.9, 0.6))
+    if hk > 0:
+        c.saveLayerAlpha(None, int(255 * 0.85 * hk))
+        reveal(c, TL.COPY["handle"], CX, H - MARGIN - 30 * U, 42 * U, TL.SERIF_UP, CREAM, 99, 0)
+        c.restore()
 
 
 SHOT_FN = {"pause": sh_pause, "breathe": sh_breathe, "blessed": sh_blessed, "follow": sh_follow}
@@ -148,36 +183,30 @@ SHOT_FN = {"pause": sh_pause, "breathe": sh_breathe, "blessed": sh_blessed, "fol
 
 def draw_shot(c, idx, t):
     s, e, name = TL.SHOTS[idx]
-    SHOT_FN[name](c, t, t - s, e - s, stepped(t, 12))
+    SHOT_FN[name](c, t, t - s, e - s)
 
 
 def draw(c, t):
-    c.drawImage(PAPER, 0, 0)
     idx = next((i for i, (s, e, _) in enumerate(TL.SHOTS) if s <= t < e), len(TL.SHOTS) - 1)
     draw_shot(c, idx, t)
     s = TL.SHOTS[idx][0]
-    # dissolve the outgoing shot; the spread -> follow change is one continuous move, so no dissolve there
-    if idx > 0 and t - s < TL.XFADE and TL.SHOTS[idx][2] != "follow":
-        a = 1 - ease_in_out_cubic((t - s) / TL.XFADE)
-        c.saveLayerAlpha(None, int(255 * a))
-        c.drawImage(PAPER, 0, 0)
+    if idx > 0 and TL.SHOTS[idx][2] != "follow" and t - s < 0.3:   # short dissolve under the light leak
+        c.saveLayerAlpha(None, int(255 * (1 - ease_in_out_cubic((t - s) / 0.3))))
         draw_shot(c, idx - 1, t)
         c.restore()
-    fade_in = 1 - prog(t, 0, 0.5)
-    fade_out = prog(t, TL.DURATION - 0.35, 0.35)
-    for f in (fade_in, fade_out):
+    light_leak(c, t, leak_amount(t))
+    for f in (1 - prog(t, 0, 0.6), prog(t, TL.DURATION - 0.45, 0.45)):   # open from / close to warm dark
         if f > 0:
-            c.saveLayerAlpha(None, int(255 * f))
-            c.drawImage(PAPER, 0, 0)
-            c.restore()
+            c.drawRect(skia.Rect.MakeWH(W, H), skia.Paint(Color=NIGHT, Alphaf=clamp(f)))
 
 
 def post(a, t):
-    return grain(vignette(a, 0.14), 0.018, int(t * TL.FPS))
+    return grain(vignette(a, 0.28), 0.022, int(t * TL.FPS))
 
 
 def build_audio():
-    subprocess.run([sys.executable, "piano.py", str(TL.DURATION + 0.2)], check=True)
+    subprocess.run([sys.executable, "piano.py", str(TL.DURATION + 0.2), str(TL.PIANO["seed"]), TL.PIANO["key"]],
+                   check=True)
     Path("work/cues.json").write_text(json.dumps(TL.cues(), indent=1))
     subprocess.run([sys.executable, "vibe/audio_kit.py", "mix", "work/cues.json", "-o", "work/mix.wav"], check=True)
 
