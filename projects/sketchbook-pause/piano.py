@@ -84,7 +84,9 @@ def main():
     buf = np.zeros(n, np.float32)
     bar = 4 * beat
     t0 = 0.25
-    for b, (bass, chord) in enumerate(prog):
+    nbars = int(np.ceil((seconds - t0) / bar))           # keep playing the progression for the whole piece
+    for b in range(nbars):
+        bass, chord = prog[b % len(prog)]
         tb = t0 + b * bar
         if tb > seconds:
             break
@@ -102,7 +104,7 @@ def main():
         tt = t0 + mt * beat + rng.normal(0, 0.01)
         if tt < seconds - 0.8:
             place(buf, piano_note(mn, 3.2, 0.38, 500 + mn), tt, 0.85)
-    end = t0 + 4 * bar                                     # final soft high note to close
+    end = t0 + max(nbars, 4) * bar                         # final soft high note to close (4-bar pieces unchanged)
     if end < seconds + 1:
         place(buf, piano_note(84, 3.0, 0.25, 999), min(end, seconds - 1.5), 0.5)
     x = reverb(buf.astype(np.float64))

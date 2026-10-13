@@ -1,0 +1,13 @@
+[
+ ["thirty",   "I am playing tourist in a place I have spent thirty years living in.", 0.9],
+ ["temple",   "I went to a temple in my own city,", 0.15],
+ ["before",   "a place I have visited before,", 0.15],
+ ["passed",   "perhaps passed by a thousand times without giving it much thought.", 0.9],
+ ["rushing",  "I wasn't rushing to get somewhere else.", 0.9],
+ ["simply",   "I was there simply to be there...", 0.6],
+ ["present",  "present.", 1.3],
+ ["colours",  "To notice the colours, the details,", 0.25],
+ ["little",   "the little things I might otherwise walk past.", 0.9],
+ ["still",    "To stand still for a moment", 0.35],
+ ["corner",   "and let the place be more than just another familiar corner of my city.", 0.0]
+]
