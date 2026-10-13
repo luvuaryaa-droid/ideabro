@@ -4,11 +4,13 @@
     python3 scene.py stills 2 6 21 40      # check graphics on top of the real picture -> out/stills/
     python3 scene.py audio                 # original clip sound only -> work/mix.wav
     python3 scene.py render                # overlay -> composite -> out/temple-tourist.mp4
+    NO_CARDS=1 python3 scene.py render     # same film without the text cards (for the artist's own voiceover)
 
 Layer: cinematic bars, the title, the script as text cards (no voiceover), end card, fade to dark.\nSound: the clips' own recorded sound only.
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -62,7 +64,7 @@ def draw(c, t):
         text(c, TL.TITLE[1], CX, H * 0.53, size=92 * U, font=SERIF_I, fill=CREAM, alpha=a)
 
     # the script as text cards (no voiceover): 1-2 lines of serif, lower third, soft shade behind
-    for cs, ce, lines in TL.CARDS:
+    for cs, ce, lines in ([] if os.environ.get("NO_CARDS") else TL.CARDS):
         if cs <= t < ce:
             ca = ease_out_cubic(prog(t, cs, 0.5)) * (1 - prog(t, ce - 0.35, 0.35))
             size = min(54 * U, min((W * 0.86) / max(1, text_width(ln, 100, SERIF_I)) * 100 for ln in lines))
@@ -120,6 +122,9 @@ def build_audio():
     print("original sound -> work/mix.wav")
 
 
+OUT = "out/temple-tourist_clean.mp4" if os.environ.get("NO_CARDS") else "out/temple-tourist.mp4"
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "stills"
     if cmd == "stills":
@@ -135,7 +140,7 @@ if __name__ == "__main__":
                         "-o", "work/composite.mp4"], check=True)
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "work/composite.mp4", "-i", "work/mix.wav",
                         "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
-                        "-shortest", "-movflags", "+faststart", "out/temple-tourist.mp4"], check=True)
-        print("done -> out/temple-tourist.mp4")
+                        "-shortest", "-movflags", "+faststart", OUT], check=True)
+        print("done ->", OUT)
     else:
         sys.exit(__doc__)
