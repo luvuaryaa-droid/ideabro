@@ -8,7 +8,7 @@ from pathlib import Path
 
 W, H = 1920, 1080
 FPS = 24
-DURATION = 77.0
+DURATION = 86.0
 VO_START = 3.6
 XF = 0.6                       # dissolve length between shots
 BAR = 103                      # cinematic bars (top + bottom) -> ~2.2:1 picture
@@ -22,35 +22,32 @@ PHRASES = {p["id"]: (round(p["s"] + VO_START, 3), round(p["e"] + VO_START, 3), p
 
 # shot: (name, source, source_in, start, end, drift, speed)
 #   drift = slow camera move across the frame: 'l', 'r', 'u', 'd', 'in'  ; speed < 1 = gentle slow motion
-SHOTS = [
-    ("title",     "temple",  0.0,   0.0,  3.3, "r",  0.7),   # temple + shrine in the garden: title
-    ("street",    "temple2", 51.0,  3.3,  8.0, "l",  0.85),  # "...thirty years living in" - the everyday city
-    ("spire",     "temple2", 10.0,  8.0, 10.3, "u",  1.0),   # "I went to a temple in my own city,"
-    ("tank",      "temple",  55.5, 10.3, 12.25, "r", 1.0),   # "a place I have visited before,"
-    ("path",      "temple",  27.0, 12.25, 16.6, "in", 1.0),  # "perhaps passed by a thousand times..."
-    ("walk",      "temple",  17.0, 16.6, 19.6, "l",  1.0),   # "I wasn't rushing..."  (you, walking towards camera)
-    ("shadow",    "temple",  10.4, 19.6, 22.2, "in", 1.0),   # "I was there simply to be there..."
-    ("sitting",   "temple",  3.0,  22.2, 24.3, "r",  1.0),   # "present."  (you on the lawn)
-    ("carvings",  "temple2", 35.0, 24.3, 26.6, "l",  1.0),   # "To notice the colours, the details,"
-    ("redtree",   "temple",  50.5, 26.6, 28.2, "in", 1.0),   # "the little things..."
-    ("nandi",     "temple2", 40.0, 28.2, 30.1, "in", 1.0),   # "...I might otherwise walk past."
-    ("pond",      "temple2", 4.0,  30.1, 32.0, "in", 1.0),   # "To stand still for a moment"
-    ("pillars",   "temple2", 45.0, 32.0, 34.5, "r",  1.0),   # "and let the place be more than..."
-    ("offering",  "temple2", 18.0, 34.5, 37.0, "l",  1.0),   # "...familiar corner of my city."
-    ("sitting2",  "temple",  5.3,  37.0, 39.9, "in", 0.7),   # "It's strange how familiarity works."  (you on the lawn)
-    ("lakepath",  "temple",  22.0, 39.9, 42.8, "r",  1.0),   # "We live in a place for years, sometimes decades,"
-    ("trees",     "temple",  8.0,  42.8, 45.3, "in", 0.6),   # "and slowly stop seeing it."
-    ("spire2",    "temple",  63.0, 45.3, 48.1, "u",  1.0),   # "We know the roads, the landmarks, the turns to take."
-    ("lamp",      "temple",  68.5, 48.1, 51.2, "l",  0.75),  # "But do we really see them?"
-    ("shadow2",   "temple2", 0.0,  51.2, 54.3, "in", 1.0),   # "Today, I wondered how many little things I had missed"
-    ("offering2", "temple2", 24.0, 54.3, 57.6, "r",  1.0),   # "simply because I thought I already knew this place."
-    ("farpath",   "temple",  32.5, 57.6, 61.2, "in", 1.0),   # "And perhaps that's what an Artist Date is about."
-    ("pillars2",  "temple2", 48.1,  61.2, 63.4, "l", 1.0),   # "Stepping outside your usual routine"
-    ("spire3",    "temple2", 13.0, 63.4, 66.2, "in", 0.85),  # "and meeting the familiar with fresh eyes."
-    ("tank2",     "temple",  58.3, 66.2, 70.0, "l",  1.0),   # "Perhaps I don't always need a new place to find inspiration."
-    ("toward",    "temple",  73.45, 70.0, 73.0, "in", 0.72), # "Perhaps I just need to become a beginner again."  (you, walking towards camera)
-    ("end",       "temple",  41.0, 73.0, DURATION, "in", 0.9),  # the pond and tree: end card
+SHOTS = [   # v3: every scene appears exactly once; timed to the artist's own voiceover (raw/voice.mp3)
+    ("title"    , "temple"  ,   0.00,   0.00,      3.3, "r"  , 0.7),
+    ("street"   , "temple2" ,  51.00,   3.30,      9.3, "l"  , 0.735),
+    ("spire"    , "temple2" ,  10.00,   9.30,    11.83, "u"  , 1.0),
+    ("tank"     , "temple"  ,  55.50,  11.83,    14.08, "r"  , 1.0),
+    ("farpath"  , "temple"  ,  27.00,  14.08,    20.07, "in" , 1.0),
+    ("canopy"   , "temple3" ,   0.00,  20.07,    22.38, "r"  , 0.8),
+    ("shadow"   , "temple"  ,  10.40,  22.38,    24.67, "in" , 1.0),
+    ("sitting"  , "temple"  ,   3.00,  24.67,    27.56, "r"  , 0.8),
+    ("carvings" , "temple2" ,  35.00,  27.56,    29.71, "l"  , 1.0),
+    ("redtree"  , "temple"  ,  50.50,  29.71,    31.47, "in" , 1.0),
+    ("nandi"    , "temple2" ,  40.00,  31.47,    33.24, "in" , 1.0),
+    ("pond"     , "temple2" ,   4.00,  33.24,    35.82, "in" , 1.0),
+    ("pillars"  , "temple2" ,  45.00,  35.82,    39.41, "r"  , 1.0),
+    ("lawn"     , "temple4" ,   0.00,  39.41,    44.16, "in" , 0.8),
+    ("lakepath" , "temple"  ,  22.00,  44.16,    48.09, "r"  , 1.0),
+    ("garden"   , "temple3" ,  27.00,  48.09,    52.88, "l"  , 1.0),
+    ("lamp"     , "temple"  ,  68.50,  52.88,    56.07, "l"  , 0.72),
+    ("looking"  , "temple3" ,   9.00,  56.07,    63.22, "in" , 1.0),
+    ("treepond" , "temple"  ,  40.00,  63.22,    71.47, "in" , 1.0),
+    ("offering" , "temple2" ,  18.00,  71.47,    78.54, "r"  , 1.0),
+    ("walk"     , "temple"  ,  17.05,  78.54, DURATION, "in" , 0.643),
 ]
+# per-source letterbox crop (phone files are 9:16 with the 16:9 picture in the middle; temple3/4 are landscape)
+SRC_CROPS = {"temple": "crop=720:404:0:438", "temple2": "crop=720:404:0:438",
+             "temple3": "crop=720:404:0:1", "temple4": "crop=2160:1215:0:0"}
 
 TITLE = ("ARTIST DATE", "Playing Tourist in My Own City")
 HANDLE = "@the_unrushed.whispers"
@@ -59,11 +56,15 @@ HANDLE = "@the_unrushed.whispers"
 CARD_GROUPS = [["thirty"], ["temple", "before"], ["passed"], ["rushing"], ["simply", "present"],
                ["colours", "little"], ["still", "corner"], ["strange"], ["years", "seeing"], ["roads", "really"],
                ["today", "knew"], ["about"], ["routine", "fresh"], ["new"], ["beginner"]]
-END_CARD = 74.6
-CARD_START = {"thirty": 3.4, "temple": 8.1, "passed": 13.0, "routine": 61.6}   # rebalanced so every card gets its reading time
+END_CARD = 83.0
+# The artist's own voiceover: raw/voice.mp3 placed at VOICE_OFFSET. Line starts (s, in the recording) were found
+# with an offline Whisper pass (sherpa-onnx base.en) + the breaths between lines; see work/voice_segments.json.
+VOICE_FILE = "raw/voice.mp3"
+VOICE_OFFSET = 3.0
+VOICE_LINES = {"thirty": 0.4, "temple": 6.3, "passed": 11.94, "rushing": 17.06, "simply": 19.46, "colours": 23.7, "still": 29.36, "strange": 37.32, "years": 40.08, "roads": 46.38, "today": 52.9, "about": 60.94, "routine": 64.38, "new": 71.26, "beginner": 75.56}
+VOICE_END = 79.30
 CARDS = []
 for _i, _g in enumerate(CARD_GROUPS):
-    _st = lambda k: CARD_START.get(k, PHRASES[k][0] - 0.1)  # noqa: E731
-    _s = _st(_g[0])
-    _e = (_st(CARD_GROUPS[_i + 1][0]) - 0.15) if _i + 1 < len(CARD_GROUPS) else END_CARD - 0.2
+    _s = VOICE_LINES[_g[0]] + VOICE_OFFSET - 0.1
+    _e = (VOICE_LINES[CARD_GROUPS[_i + 1][0]] + VOICE_OFFSET - 0.25) if _i + 1 < len(CARD_GROUPS) else VOICE_END + VOICE_OFFSET + 0.4
     CARDS.append((_s, _e, [PHRASES[k][2] for k in _g]))

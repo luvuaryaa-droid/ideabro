@@ -116,10 +116,31 @@ def build_audio():
     amb[:fi] *= np.linspace(0, 1, fi)[:, None]
     amb[-fo:] *= np.linspace(1, 0, fo)[:, None]
     ak.write_wav("work/ambience_raw.wav", amb)
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "work/ambience_raw.wav", "-af",
-                    loudnorm_filter("work/ambience_raw.wav", lufs=-16.0, tp=-1.5), "-ar", str(sr), "work/mix.wav"],
+    if not getattr(TL, "VOICE_FILE", None):
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "work/ambience_raw.wav", "-af",
+                        loudnorm_filter("work/ambience_raw.wav", lufs=-16.0, tp=-1.5), "-ar", str(sr), "work/mix.wav"],
+                       check=True)
+        print("original sound -> work/mix.wav")
+        return
+    # the artist's own voiceover on top (cleaned), the original sound underneath, dipping while she speaks
+    subprocess.run([sys.executable, "vibe/audio_kit.py", "voice", TL.VOICE_FILE, "-o", "work/voice.wav", "--denoise"],
                    check=True)
-    print("original sound -> work/mix.wav")
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "work/voice.wav", "-af",
+                    loudnorm_filter("work/voice.wav", lufs=-16.0, tp=-2.0), "-ar", str(sr), "work/voice_lv.wav"],
+                   check=True)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "work/ambience_raw.wav", "-af",
+                    loudnorm_filter("work/ambience_raw.wav", lufs=-24.0, tp=-3.0), "-ar", str(sr), "work/ambience.wav"],
+                   check=True)
+    cues = {"duration": TL.DURATION,
+            "voice": {"file": "work/voice_lv.wav", "gain_db": 0, "t": TL.VOICE_OFFSET},
+            "music": {"file": "work/ambience.wav", "gain_db": 0, "duck_db": -6, "fade_out": 1.5},
+            "sfx": []}
+    Path("work/cues.json").write_text(json.dumps(cues, indent=1))
+    subprocess.run([sys.executable, "vibe/audio_kit.py", "mix", "work/cues.json", "-o", "work/mix_raw.wav"], check=True)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "work/mix_raw.wav", "-af",
+                    loudnorm_filter("work/mix_raw.wav", lufs=-14.0, tp=-1.0), "-ar", str(sr), "work/mix.wav"],
+                   check=True)
+    print("voice + original sound -> work/mix.wav")
 
 
 OUT = "out/temple-tourist_clean.mp4" if os.environ.get("NO_CARDS") else "out/temple-tourist.mp4"
