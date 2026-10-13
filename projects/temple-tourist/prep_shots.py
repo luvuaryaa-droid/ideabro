@@ -32,7 +32,8 @@ for i, (name, src, sin, s, e, drift, speed) in enumerate(TL.SHOTS):
     if drift == "in":   # slow push-in: scale up over the shot, keep centred
         zoom = f",scale=w='{OW}*(1+0.05*min(t/{out_dur:.3f},1))':h=-2:eval=frame:flags=lanczos"
         x, y = "(iw-ow)/2", "(ih-oh)/2"
-    vf = (f"{TL.SRC_CROP},setpts={1/speed:.4f}*PTS,fps={TL.FPS},scale={OW}:{OH}:flags=lanczos{zoom},"
+    rate = f"framerate=fps={TL.FPS}" if speed < 0.95 else f"fps={TL.FPS}"   # blend frames for smooth slow motion
+    vf = (f"{TL.SRC_CROP},setpts={1/speed:.4f}*PTS,{rate},scale={OW}:{OH}:flags=lanczos{zoom},"
           f"crop={TL.W}:{TL.H}:'{x}':'{y}',{TL.GRADE},unsharp=5:5:0.4,format=yuv420p")
     out = f"work/shots/{i:02d}_{name}.mp4"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{sin}", "-t", f"{src_dur + 0.1:.3f}", "-i", f"raw/{src}.mp4",

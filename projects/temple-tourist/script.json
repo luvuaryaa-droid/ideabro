@@ -9,5 +9,17 @@
  ["colours",  "To notice the colours, the details,", 0.25],
  ["little",   "the little things I might otherwise walk past.", 0.9],
  ["still",    "To stand still for a moment", 0.35],
- ["corner",   "and let the place be more than just another familiar corner of my city.", 0.0]
+ ["corner",   "and let the place be more than just another familiar corner of my city.", 1.2],
+ ["strange",  "It's strange how familiarity works.", 0.9],
+ ["years",    "We live in a place for years, sometimes decades,", 0.15],
+ ["seeing",   "and slowly stop seeing it.", 0.7],
+ ["roads",    "We know the roads, the landmarks, the turns to take.", 0.5],
+ ["really",   "But do we really see them?", 1.1],
+ ["today",    "Today, I wondered how many little things I had missed", 0.15],
+ ["knew",     "simply because I thought I already knew this place.", 1.0],
+ ["about",    "And perhaps that's what an Artist Date is about.", 0.4],
+ ["routine",  "Stepping outside your usual routine", 0.15],
+ ["fresh",    "and meeting the familiar with fresh eyes.", 1.1],
+ ["new",      "Perhaps I don't always need a new place to find inspiration.", 0.8],
+ ["beginner", "Perhaps I just need to become a beginner again.", 0.0]
 ]

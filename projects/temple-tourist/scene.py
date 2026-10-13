@@ -2,10 +2,10 @@
 
     python3 prep_shots.py                  # picture: graded shots joined with dissolves -> work/picture.mp4
     python3 scene.py stills 2 6 21 40      # check graphics on top of the real picture -> out/stills/
-    python3 scene.py audio                 # voice + piano + temple ambience -> work/mix.wav
+    python3 scene.py audio                 # original clip sound only -> work/mix.wav
     python3 scene.py render                # overlay -> composite -> out/temple-tourist.mp4
 
-Layer: cinematic bars, the title, captions in the bottom bar (exact phrase times), end card, fade to dark.
+Layer: cinematic bars, the title, the script as text cards (no voiceover), end card, fade to dark.\nSound: the clips' own recorded sound only.
 """
 
 import json
@@ -55,24 +55,27 @@ def draw(c, t):
     c.drawRect(skia.Rect.MakeXYWH(0, H - TL.BAR * U, W, TL.BAR * U), bars)
 
     # title over the opening shot
-    a = fade_window(t, 0.5, 3.6, 0.9, 0.7)
+    a = fade_window(t, 0.4, 3.3, 0.9, 0.6)
     if a > 0:
         soft_dark(c, a, H * 0.5, 420 * U)
         spaced(c, TL.TITLE[0], H * 0.44, 34 * U, SERIF, CREAM, a, 0.45)
         text(c, TL.TITLE[1], CX, H * 0.53, size=92 * U, font=SERIF_I, fill=CREAM, alpha=a)
 
-    # captions in the bottom bar, one at a time, exactly on their phrase
-    caps = sorted(TL.CAPTIONS)
-    for i, (s, e, txt) in enumerate(caps):
-        nxt = caps[i + 1][0] - 0.1 if i + 1 < len(caps) else TL.DURATION
-        end = min(e + 0.4, nxt)
-        if s - 0.1 <= t < end:
-            ca = ease_out_cubic(prog(t, s - 0.1, 0.2)) * (1 - prog(t, end - 0.2, 0.2))
-            size = min(42 * U, (W * 0.9) / max(1, text_width(txt, 100, SERIF_I)) * 100)
-            text(c, txt, CX, H - TL.BAR * U / 2, size=size, font=SERIF_I, fill=CREAM, alpha=0.95 * ca)
+    # the script as text cards (no voiceover): 1-2 lines of serif, lower third, soft shade behind
+    for cs, ce, lines in TL.CARDS:
+        if cs <= t < ce:
+            ca = ease_out_cubic(prog(t, cs, 0.5)) * (1 - prog(t, ce - 0.35, 0.35))
+            size = min(54 * U, min((W * 0.86) / max(1, text_width(ln, 100, SERIF_I)) * 100 for ln in lines))
+            lh = size * 1.32
+            y0 = H - TL.BAR * U - 70 * U - lh * (len(lines) - 1)
+            soft_dark(c, ca * 0.9, y0 + lh * (len(lines) - 1) / 2, 140 * U + lh * len(lines))
+            for j, ln in enumerate(lines):
+                rise = (1 - ease_out_cubic(prog(t, cs + 0.12 * j, 0.6))) * 10 * U
+                text(c, ln, CX, y0 + j * lh + rise, size=size, font=SERIF_I, fill=CREAM,
+                     alpha=ca * ease_out_cubic(prog(t, cs + 0.12 * j, 0.5)))
 
     # end card over the still pond
-    e0 = TL.SHOTS[-1][3] + 0.5
+    e0 = TL.END_CARD
     a = fade_window(t, e0, TL.DURATION - 0.3, 0.9, 0.01)
     if a > 0:
         soft_dark(c, a, H * 0.5, 380 * U)
@@ -88,33 +91,33 @@ def draw(c, t):
 
 
 def build_audio():
-    """Voice on top, soft piano under it (ducked), and each shot's own ambience crossfaded quietly beneath."""
+    """No voiceover, no music: each shot's own recorded sound (natural speed), crossfaded under the dissolves,
+    gently cleaned (rumble / hiss roll-off) and levelled to -16 LUFS so quiet ambience isn't pushed into hiss."""
+    sys.path.insert(0, "vibe")
+    from vibelib import loudnorm_filter
     sr = ak.SR
     n = int(TL.DURATION * sr)
     amb = np.zeros((n, 2), np.float32)
     for name, src, sin, s, e, drift, speed in TL.SHOTS:
         d = (e - s) + TL.XF
         tmp = Path(f"work/amb_{name}.wav")
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{sin}", "-t", f"{d * speed:.3f}", "-i", f"raw/{src}.mp4",
-                        "-vn", "-af", f"atempo={max(0.5, speed):.3f},highpass=f=90,lowpass=f=9000",
-                        "-ar", str(sr), "-ac", "2", str(tmp)], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{sin}", "-t", f"{d:.3f}", "-i", f"raw/{src}.mp4",
+                        "-vn", "-af", "highpass=f=70,lowpass=f=11000", "-ar", str(sr), "-ac", "2", str(tmp)], check=True)
         x = ak.read_audio(tmp)
-        k = int(TL.XF * sr)
+        k = min(int(TL.XF * sr), len(x) // 2)
         env = np.ones(len(x), np.float32)
-        env[:k] = np.linspace(0, 1, min(k, len(x)))
+        env[:k] = np.linspace(0, 1, k)
         env[-k:] = np.minimum(env[-k:], np.linspace(1, 0, k))
         ak.place(amb, x * env[:, None], s, 0.0)
         tmp.unlink()
-    ak.write_wav("work/ambience.wav", amb)
-    subprocess.run([sys.executable, "../sketchbook-pause/piano.py", str(TL.DURATION + 0.5), "8", "F"], check=True,
-                   cwd=".")
-    cues = {"duration": TL.DURATION,
-            "voice": {"file": "work/vo.wav", "gain_db": 0, "t": TL.VO_START},
-            "music": {"file": "work/piano.wav", "gain_db": -12, "duck_db": -6, "fade_out": 2.5},
-            "tracks": [{"file": "work/ambience.wav", "t": 0.0, "gain_db": -4}],
-            "sfx": []}
-    Path("work/cues.json").write_text(json.dumps(cues, indent=1))
-    subprocess.run([sys.executable, "vibe/audio_kit.py", "mix", "work/cues.json", "-o", "work/mix.wav"], check=True)
+    fi, fo = int(0.6 * sr), int(1.5 * sr)                  # fade in from / out to silence with the picture
+    amb[:fi] *= np.linspace(0, 1, fi)[:, None]
+    amb[-fo:] *= np.linspace(1, 0, fo)[:, None]
+    ak.write_wav("work/ambience_raw.wav", amb)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "work/ambience_raw.wav", "-af",
+                    loudnorm_filter("work/ambience_raw.wav", lufs=-16.0, tp=-1.5), "-ar", str(sr), "work/mix.wav"],
+                   check=True)
+    print("original sound -> work/mix.wav")
 
 
 if __name__ == "__main__":
