@@ -362,9 +362,12 @@ def s_batch(c, t, lt, dur):
 
 def s_how(c, t, lt, dur):
     c.clear(INK)
+    kh = ease_out_back(prog(lt, 0.0, 0.4))
+    text(c, "HOW IT WORKS", CX - 40 * U, MID - 420 * U, size=110 * U * (0.7 + 0.3 * kh), font="display", fill=PINK,
+         alpha=clamp(kh * 2))
     steps = TL.COPY["how"]
     for i, s in enumerate(steps):
-        k = stagger(lt, i, 0.1, TL.BEAT * 1.1, 0.4, ease_out_back)
+        k = stagger(lt, i, 0.15, TL.BEAT * 1.5, 0.4, ease_out_back)
         y = MID - 220 * U + i * 220 * U
         c.drawCircle(CX - 330 * U, y, 52 * U * k, skia.Paint(Color=PINK, AntiAlias=True))
         text(c, str(i + 1), CX - 330 * U, y, size=60 * U * k, font="display", fill=NIGHT)

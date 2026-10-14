@@ -21,7 +21,7 @@ _PLAN = [
     ("styles", 6),
     ("f_edit", 6), ("f_cinematic", 6), ("f_fix", 6), ("f_nofilm", 6),
     ("f_teach", 6), ("f_sell", 6), ("f_everywhere", 6), ("f_batch", 6),
-    ("how", 4), ("endcard", 10),
+    ("how", 6), ("endcard", 8),
 ]
 SCENES, _b = [], 0
 for _name, _n in _PLAN:
@@ -52,7 +52,7 @@ COPY = {
                      "shapes": [("9:16", 9, 16), ("4:5", 4, 5), ("1:1", 1, 1), ("16:9", 16, 9), ("2:3", 2, 3)]},
     "f_batch": {"title": "BATCH & LIBRARY", "line": "Sorts your camera roll. Edits a whole week at once.",
                 "rows": ["Session 1", "Session 2"]},
-    "how": ["Paint. Phone on a stand.", "Tell Claude where the files are.", "Post on your days."],
+    "how": ["Download the skills.", "Run them in Claude.", "Ready to work."],
     "price_label": "LAUNCH PRICE · ALL 8 SKILLS",
     "price": "₹699",
     "price_was": "₹1,499",
@@ -121,6 +121,6 @@ VO = [
     ("f_sell", "Sell Your Art puts your painting on a wall, at true size."),
     ("f_everywhere", "Post Everywhere makes carousels, and every video shape."),
     ("f_batch", "And Batch sorts your camera roll, and edits a whole week."),
-    ("how", "Paint. Tell Claude. Post on your days."),
-    ("endcard", "All eight skills, at a launch price of six hundred ninety-nine rupees. Link in bio."),
+    ("how", "Download. Run. And you are ready to work."),
+    ("endcard", "All eight skills, just six hundred ninety-nine rupees. Link in bio."),
 ]
