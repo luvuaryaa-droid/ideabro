@@ -1,0 +1,16 @@
+{
+  "name": "Unrushed Studio",
+  "product": "Unrushed Studio",
+  "tagline": "Paint first. Your posts come out of your painting time.",
+  "colors": {
+    "ink": "#4A2133",
+    "paper": "#F7DDE3",
+    "cream": "#FFF7F8",
+    "pink": "#F28BA8",
+    "blue": "#1E4FB8",
+    "night": "#2B0B18",
+    "white": "#FFFFFF"
+  },
+  "roles": {"bg": "paper", "fg": "ink", "accent": "pink", "accent2": "blue", "caption": "white", "caption_hi": "pink"},
+  "fonts": {"display": "Anton", "impact": "Anton", "body": "Nunito", "hand": "Caveat", "mono": "Poppins:700"}
+}
