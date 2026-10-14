@@ -203,7 +203,7 @@ def v_title(c, key, t, lt, dur):
     c.rotate(4)
     shadow(c, -sq / 2, -sq / 2, sq, sq, 20 * U, blur=40 * U, alpha=0.4)
     rrect(c, -sq / 2 - 14 * U, -sq / 2 - 14 * U, sq + 28 * U, sq + 28 * U, 26 * U, CREAM)
-    draw_image(c, "raw/painting_square.jpg", -sq / 2, -sq / 2, sq, sq)
+    draw_image(c, "raw/clock.jpg", -sq / 2, -sq / 2, sq, sq)
     c.restore()
     title = TL.SCENE_INFO[key][1]
     kt = ease_out_back(prog(lt, 0.2, 0.5))
