@@ -426,10 +426,37 @@ def draw(c, t):
     SCENES[name](c, t, lt, dur)
 
 
+def build_voice():
+    """place each line (work/vo_<scene>.wav from vibe/tts.py) on its scene; nudge later if the previous runs long."""
+    import wave
+    import numpy as np
+    sr = 24000
+    out = np.zeros(int(TL.DURATION * sr), np.float32)
+    prev = 0.0
+    for k, _ in TL.VO:
+        w = wave.open(f"work/vo_{k}.wav")
+        sr = w.getframerate()
+        x = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
+        w.close()
+        if len(out) != int(TL.DURATION * sr):
+            out = np.zeros(int(TL.DURATION * sr), np.float32)
+        st = max(TL.start(k) + 0.15, prev + 0.2)
+        i = int(st * sr)
+        x = x[: len(out) - i]
+        out[i:i + len(x)] += x
+        prev = st + len(x) / sr
+    w = wave.open("work/voice.wav", "wb")
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr)
+    w.writeframes((np.clip(out, -1, 1) * 32767).astype(np.int16).tobytes())
+    w.close()
+    return "work/voice.wav"
+
+
 def build_audio():
     Path("work").mkdir(exist_ok=True)
     ak.write_wav("work/music.wav", ak.music_bed(TL.MOOD, seconds=TL.DURATION, bpm=TL.BPM, intro_bars=0))
-    Path("work/cues.json").write_text(json.dumps(TL.cues(), indent=1))
+    voice = build_voice()
+    Path("work/cues.json").write_text(json.dumps(TL.cues(voice=voice), indent=1))
     import subprocess
     subprocess.run([sys.executable, "vibe/audio_kit.py", "mix", "work/cues.json", "-o", "work/mix.wav"], check=True)
 

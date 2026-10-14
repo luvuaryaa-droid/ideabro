@@ -104,3 +104,23 @@ def cues(voice=None, music="work/music.wav"):
     if voice:
         c["voice"] = {"file": voice, "gain_db": 0}
     return c
+
+# explainer voiceover: one line per scene, starts on its scene (or just after the previous line ends)
+VOICE = "af_heart"
+VO_SPEED = 1.08
+VO = [
+    ("hook", "You paint. Claude edits."),
+    ("problem", "One free evening. Paint it, or edit it?"),
+    ("reveal", "Meet Unrushed Studio. Eight skills for artists."),
+    ("styles", "Start with the Style Menu. See every look, and pick a number."),
+    ("f_edit", "Unrushed Edit turns one painting session into four Reels."),
+    ("f_cinematic", "Cinematic Studio gives your talking clips a film look."),
+    ("f_fix", "Footage Fixer brings back your true paint colours."),
+    ("f_nofilm", "Only took photos? No-Film Studio makes a stop-motion."),
+    ("f_teach", "The Teaching Kit builds tutorials, with the colours you used."),
+    ("f_sell", "Sell Your Art puts your painting on a wall, at true size."),
+    ("f_everywhere", "Post Everywhere makes carousels, and every video shape."),
+    ("f_batch", "And Batch sorts your camera roll, and edits a whole week."),
+    ("how", "Paint. Tell Claude. Post on your days."),
+    ("endcard", "All eight skills, at a launch price of six hundred ninety-nine rupees. Link in bio."),
+]
