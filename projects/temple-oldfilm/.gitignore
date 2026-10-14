@@ -13,3 +13,7 @@ __pycache__/
 .DS_Store
 # keep tiny final stills if you like:
 !out/stills/*.png
+
+# finished videos go to GitHub through Git LFS
+!deliverables/
+!deliverables/*.mp4
