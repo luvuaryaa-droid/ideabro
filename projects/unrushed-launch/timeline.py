@@ -106,14 +106,14 @@ def cues(voice=None, music="work/music.wav"):
     return c
 
 # explainer voiceover: one line per scene, starts on its scene (or just after the previous line ends)
-VOICE = "af_heart"
-VO_SPEED = 1.08
+VOICE_MIX = {"hf_beta": 1.0}   # warm Indian female voice (artist picked sample 3)
+VO_SPEED = 1.05
 VO = [
     ("hook", "You paint. Claude edits."),
     ("problem", "One free evening. Paint it, or edit it?"),
     ("reveal", "Meet Unrushed Studio. Eight skills for artists."),
-    ("styles", "Start with the Style Menu. See every look, and pick a number."),
-    ("f_edit", "Unrushed Edit turns one painting session into four Reels."),
+    ("styles", "Start with the Style Menu. See a look, pick a number."),
+    ("f_edit", "Unrushed Edit turns one painting into four Reels."),
     ("f_cinematic", "Cinematic Studio gives your talking clips a film look."),
     ("f_fix", "Footage Fixer brings back your true paint colours."),
     ("f_nofilm", "Only took photos? No-Film Studio makes a stop-motion."),
