@@ -14,6 +14,6 @@ __pycache__/
 # keep tiny final stills if you like:
 !out/stills/*.png
 
-# finished videos go to GitHub through Git LFS
+# finished videos (each under 100 MB) are kept in git
 !deliverables/
 !deliverables/*.mp4
