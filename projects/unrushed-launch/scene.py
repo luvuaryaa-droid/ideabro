@@ -167,8 +167,8 @@ def chip_row(c, words, y, lt, t0=0.6, size=40):
             c.save()
             c.translate(x + wd / 2, y)
             c.scale(k, k)
-            rrect(c, -wd / 2, -h / 2, wd, h, h / 2, [PINK, BLUE, CREAM, PINK][i % 4])
-            text(c, w, 0, 0, size=size, font="mono", fill=CREAM if i % 4 == 1 else NIGHT)
+            rrect(c, -wd / 2, -h / 2, wd, h, h / 2, [PINK, BLUE, NIGHT, PINK][i % 4])
+            text(c, w, 0, 0, size=size, font="mono", fill=CREAM if i % 4 in (1, 2) else NIGHT)
             c.restore()
         x += wd + gap
 
@@ -307,7 +307,7 @@ def s_everywhere(c, t, lt, dur):
     header(c, lt, badge_for("f_everywhere"), cp["title"], cp["line"], CREAM)
     shapes = cp["shapes"]
     hmax = 300 * U
-    pos = [(-260, -170), (40, -170), (290, -170), (-140, 190), (230, 190)]
+    pos = [(-310, -170), (-50, -170), (250, -170), (-150, 200), (240, 200)]
     for i, (lab, a, b) in enumerate(shapes):
         k = ease_out_back(prog(lt, 0.5 + i * TL.BEAT / 2, 0.4))
         if k <= 0:
