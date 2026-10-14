@@ -1,4 +1,4 @@
-"""timeline: Unrushed Studio install tutorial (16:9, ~4.5 min, YouTube).
+"""timeline: Unrushed Studio install tutorial, the easy way (16:9, YouTube). Detailed version: work/timeline_detailed.py
 
 Voice-led: every scene is a list of spoken lines. make_vo.py renders each line, then this file builds the
 timing from the real line lengths, so picture, captions and sound always agree.
@@ -19,111 +19,47 @@ BEAT = 60.0 / BPM
 MOOD = "chill"
 VOICE_MIX = {"hf_beta": 1.0}   # the artist's pick from the launch Reel
 VO_SPEED = 0.95
-GAP, PAD_IN, PAD_OUT = 0.6, 1.0, 1.8
+GAP, PAD_IN, PAD_OUT = 0.5, 0.8, 1.4
 
 # (key, chapter label, title, view, [(spoken line, on-screen item), ...])
 # views: title, checklist, files, terminal, finder, explorer, chat, tips, end
 SCRIPT = [
-    ("intro", "", "How to install Unrushed Studio", "title", [
-        ("Hi! In this video, I'll show you how to install Unrushed Studio, step by step.", None),
-        ("It takes about ten minutes, and you only do it once.", "About 10 minutes · only once"),
-        ("After that, your painting time turns into Reels, carousels and more.", None),
+    ("intro", "", "Install Unrushed Studio the easy way", "title", [
+        ("Installing Unrushed Studio is simple. Claude does it for you.", "No terminal · no commands"),
+        ("Here's how, in four steps.", None),
     ]),
-    ("need", "Before you start", "What you need", "checklist", [
-        ("First, here's what you need.", None),
-        ("A Mac or a Windows computer.", "A Mac or Windows computer"),
-        ("Claude Code, installed on that computer.", "Claude Code"),
-        ("Python 3, and ffmpeg. They're both free.", "Python 3 + ffmpeg (free)"),
-        ("Don't worry if you don't have them yet. I'll show you how.", None),
+    ("open", "Step 1", "Open Claude Code", "web", [
+        ("Step one. Open Claude Code. On the web, go to claude dot ai slash code.", ("url", "claude.ai/code")),
+        ("Or use the Code tab in the Claude desktop app.", ("note", "or: Claude desktop app → Code")),
     ]),
-    ("unzip", "Step 1", "Download and unzip", "files", [
-        ("Step one. Download the zip file you bought.", "Unrushed-Studio-Complete-v1.0.zip"),
-        ("Double-click it to unzip. You'll get a folder.", "folder"),
-        ("Inside, there's a Start Here guide, the Style Menu, and eight folders that start with unrushed.",
-         "contents"),
-        ("Those eight folders are the skills.", "highlight"),
+    ("attach", "Step 2", "Attach the zip and ask", "web", [
+        ("Step two. Attach the Unrushed Studio zip you bought.", ("attach", "Unrushed-Studio-Complete-v1.0.zip")),
+        ("And type: read this and install it.", ("you", "Read this and install it.")),
     ]),
-    ("open_term", "Step 2", "Open a terminal", "terminal", [
-        ("Step two. Open a terminal. It's a window where you type commands.", None),
-        ("On a Mac, press Command and Space, type Terminal, and press Enter.", ("mac", "⌘ Space → Terminal")),
-        ("On Windows, open the Start menu, type PowerShell, and press Enter.", ("win", "Start → PowerShell")),
-        ("Now type ffmpeg dash version, and press Enter.", ("cmd", "ffmpeg -version")),
-        ("Then type python3 dash dash version. On Windows, type python instead.", ("cmd", "python3 --version")),
-        ("If both show a version number, skip to step four.", ("ok", "ffmpeg version 7.x · Python 3.12")),
+    ("repo", "Step 3", "Create a private repository", "web", [
+        ("Step three. Claude asks where to keep the skills. Create a new repository.",
+         ("claude", "Where should I keep the skills? Pick or create a repository.")),
+        ("Give it a name, and make it private. The skills are yours, not for everyone.",
+         ("repo", "my-unrushed-skills")),
     ]),
-    ("tools", "Step 3", "Install ffmpeg and Python", "terminal", [
-        ("Step three, only if something was missing.", None),
-        ("On a Mac, first install Homebrew from brew dot s h. Copy the one line from the site into Terminal.",
-         ("note", "brew.sh → copy the one line")),
-        ("Then type: brew install ffmpeg python.", ("cmd", "brew install ffmpeg python")),
-        ("On Windows, type: winget install Gyan dot FFmpeg.", ("cmd", "winget install Gyan.FFmpeg")),
-        ("And: winget install Python dot Python dot three twelve.", ("cmd", "winget install Python.Python.3.12")),
-        ("Then close PowerShell, and open it again, so it finds the new tools.", ("note", "Close and reopen PowerShell")),
-        ("Run the version checks again. Now you should see both.", ("ok", "ffmpeg ✓   Python ✓")),
+    ("install", "Step 4", "Claude installs it", "web", [
+        ("Step four. Claude reads the files, checks them, and installs all eight skills on its own.",
+         ("install", None)),
+        ("If it asks for permission to save, tap Allow.", ("allow", None)),
+        ("The skills now live in your repository, ready in every session.", ("claude", "Done. All 8 Unrushed skills are installed.")),
     ]),
-    ("claude", "Step 4", "Get Claude Code", "terminal", [
-        ("Step four. If you don't have Claude Code yet, install it with the official guide.",
-         ("note", "docs.claude.com → Claude Code")),
-        ("When it's ready, typing claude in the terminal opens it.", ("cmd", "claude")),
-        ("Type slash exit, or close the window, to leave it for now.", ("cmd", "/exit")),
-    ]),
-    ("copy_mac", "Step 5 · Mac", "Copy the skills into place", "finder", [
-        ("Step five. Copy the skills to where Claude looks for them. First, on a Mac.", None),
-        ("In Terminal, type this line once. It makes the skills folder if it isn't there yet.",
-         ("cmd", "mkdir -p ~/.claude/skills")),
-        ("Now open Finder. Press Command, Shift and G, to go to a folder.", ("keys", "⌘ ⇧ G")),
-        ("Type tilde, slash, dot claude, slash skills, and press Enter.", ("path", "~/.claude/skills")),
-        ("Drag all eight unrushed folders into this window.", ("drag", None)),
-        ("Each folder sits straight inside skills. Not in another folder.", ("check", "skills/unrushed-edit ✓")),
-    ]),
-    ("copy_win", "Step 5 · Windows", "Copy the skills into place", "explorer", [
-        ("On Windows, open PowerShell and type this line once.", ("cmd", "mkdir $HOME\\.claude\\skills")),
-        ("Then open File Explorer, and click the address bar at the top.", None),
-        ("Type percent user profile percent, backslash, dot claude, backslash skills, and press Enter.",
-         ("path", "%USERPROFILE%\\.claude\\skills")),
-        ("Drag all eight unrushed folders into this window.", ("drag", None)),
-    ]),
-    ("extras", "Step 6 · optional", "Captions and extras", "terminal", [
-        ("Step six is optional, but I recommend it.", None),
-        ("For captions, type: pip install faster-whisper.", ("cmd", "pip install faster-whisper")),
-        ("For face framing and photo alignment, type: pip install opencv-python.",
-         ("cmd", "pip install opencv-python")),
-        ("On Windows, start these with python dash m pip.", ("note", "Windows: python -m pip install …")),
-        ("The first captioned video downloads a speech model once. After that, it works offline.",
-         ("note", "Needs internet once, then offline")),
-    ]),
-    ("first", "Step 7", "Your first run", "chat", [
-        ("Step seven. Let's try it.", None),
-        ("In the terminal, go to the folder with your painting videos, and type claude.",
-         ("cmd", "cd Paintings  →  claude")),
-        ("Ask: what Unrushed skills do you have?", ("you", "What Unrushed skills do you have?")),
-        ("Claude lists all eight. That means they're installed.", ("claude", "Unrushed Edit, Cinematic Studio, Footage Fixer, No-Film Studio, Teaching Kit, Sell Your Art, Post Everywhere, Batch & Library")),
-        ("Now say: show me the styles on my painting. Then pick a number from each picture.",
-         ("you", "Show me the styles on my painting.")),
-    ]),
-    ("app", "Another way", "Using the Claude app", "tips", [
-        ("Using the Claude app instead of Claude Code? You can still use the skills.", None),
-        ("Zip one skill folder, and add it as a skill in Claude's settings.", "Zip a skill folder → add it in Settings"),
-        ("For videos, Claude Code is better, because your files stay on your computer.",
-         "Claude Code is best for video"),
-    ]),
-    ("help", "If something goes wrong", "Quick fixes", "tips", [
-        ("If something doesn't work, check these.", None),
-        ("ffmpeg not found? Close the terminal, and open it again.", "“ffmpeg not found” → reopen the terminal"),
-        ("Claude can't see the skills? Check the folder is dot claude, with the dot, and the eight folders sit right inside skills.",
-         "Skills missing → .claude/skills/unrushed-…"),
-        ("And steps can change between Claude versions. If anything looks different, check docs dot claude dot com.",
-         "Something looks different → docs.claude.com"),
+    ("ready", "You're ready", "Try it", "web", [
+        ("Now just ask: show me the styles on my painting.", ("you", "Show me the styles on my painting.")),
+        ("Pick a number from each picture. That's your look, saved for every Reel.", ("styles", None)),
     ]),
     ("outro", "", "You're ready to work", "end", [
-        ("That's it. You're ready.", None),
-        ("Open the Style Menu, choose your look, and go paint. Your posts come out of your painting time.", None),
+        ("That's it. Open Claude, ask, and go paint.", None),
+        ("Your posts come out of your painting time.", None),
     ]),
 ]
 
 # chapter list for the YouTube description (filled from the timing below)
-CHAPTER_KEYS = ["intro", "need", "unzip", "open_term", "tools", "claude", "copy_mac", "copy_win", "extras",
-                "first", "app", "help", "outro"]
+CHAPTER_KEYS = ["intro", "open", "attach", "repo", "install", "ready", "outro"]
 
 
 def line_id(key, i):

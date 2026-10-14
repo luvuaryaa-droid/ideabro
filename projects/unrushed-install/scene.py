@@ -17,7 +17,7 @@ import skia
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "vibe"))
 import audio_kit as ak  # noqa: E402
-from motion_kit import (Stage, clamp, draw_image, ease_in_out_cubic, ease_out_back, ease_out_cubic,  # noqa: E402
+from motion_kit import (Stage, clamp, draw_image, image, ease_in_out_cubic, ease_out_back, ease_out_cubic,  # noqa: E402
                         lerp, prog, rgb, rrect, shadow, text, text_width, wrap)
 
 import timeline as TL  # noqa: E402
@@ -29,7 +29,7 @@ PAPER, INK, PINK, BLUE = rgb(B, "paper"), rgb(B, "ink"), rgb(B, "pink"), rgb(B, 
 CREAM, NIGHT, WHITE = rgb(B, "cream"), rgb(B, "night"), rgb(B, "white")
 M = TL.W * 0.05                       # 16:9 safe margin 5 %
 TERM_BG = rgb("#1F1A24")
-STEPS = ["unzip", "open_term", "tools", "claude", "copy_mac", "extras", "first"]
+STEPS = ["open", "attach", "repo", "install"]
 
 
 # ---------------------------------------------------------------- helpers
@@ -159,8 +159,8 @@ def left_column(c, key, lt):
         text(c, ln, M, 300 * U + i * 104 * U + (1 - kt) * 30 * U, size=92 * U, font="display", fill=INK,
              align="left", alpha=kt)
     # step progress
-    if key in STEPS or key == "copy_win":
-        cur = STEPS.index("copy_mac" if key == "copy_win" else key)
+    if key in STEPS or key == "ready":
+        cur = STEPS.index(key) if key in STEPS else len(STEPS)
         for i in range(len(STEPS)):
             x = M + i * 64 * U
             y = 300 * U + len(lines) * 104 * U + 30 * U
@@ -457,7 +457,7 @@ def v_end(c, key, t, lt, dur):
     text(c, "YOU'RE READY TO WORK", TL.W / 2, TL.H / 2 - 140 * U, size=130 * U * (0.7 + 0.3 * k), font="display",
          fill=PINK, alpha=clamp(k * 2))
     k2 = ease_out_back(prog(lt, 2.0, 0.5))
-    sticker(c, "Open the Style Menu · pick your look · paint", TL.W / 2, TL.H / 2 + 40 * U, 36 * U, k2,
+    sticker(c, "Open Claude · ask · paint", TL.W / 2, TL.H / 2 + 40 * U, 36 * U, k2,
             fill=CREAM, rot=-1.5)
     k3 = ease_out_cubic(prog(lt, 3.5, 0.6))
     text(c, "Paint first. Your posts come out of your painting time.", TL.W / 2, TL.H / 2 + 190 * U,
@@ -465,8 +465,175 @@ def v_end(c, key, t, lt, dur):
     text(c, "UNRUSHED STUDIO", TL.W / 2, TL.H - M - 160 * U, size=40 * U, font="display", fill=PINK, alpha=k3)
 
 
+WEB_SCENES = ["open", "attach", "repo", "install", "ready"]
+SKILL_NAMES = ["Unrushed Edit", "Cinematic Studio", "Footage Fixer", "No-Film Studio", "Teaching Kit",
+               "Sell Your Art", "Post Everywhere", "Batch & Library"]
+
+
+def web_items(t):
+    """every item from the web scenes whose line has started: [(kind, text, since)]"""
+    out = []
+    for key in WEB_SCENES:
+        for i, (_txt, it) in enumerate(items(key)):
+            k = TL.item_k(key, i, t)
+            if k >= 0 and it is not None:
+                out.append((it[0], it[1], k))
+    return out
+
+
+def bubble(c, x, y, w, lines, size, fill, ink, font="body"):
+    h = len(lines) * size * 1.35 + 30 * U
+    rrect(c, x, y, w, h, 22 * U, fill)
+    for j, ln in enumerate(lines):
+        text(c, ln, x + 26 * U, y + 15 * U + size * 0.68 + j * size * 1.35, size=size, font=font, fill=ink,
+             align="left")
+    return h
+
+
+def v_web(c, key, t, lt, dur):
+    c.clear(PAPER)
+    left_column(c, key, lt)
+    x, y, w, h = PANEL_X, PANEL_Y - 20 * U, PANEL_W, PANEL_H + 40 * U
+    kw = 1.0 if key != "open" else ease_out_back(prog(lt, 0.2, 0.5))
+    window(c, x, y, w, h, "Claude Code", k=kw)
+    if kw < 1:
+        return
+    its = web_items(t)
+    st = {}
+    for kind, s_, k in its:
+        st.setdefault(kind, []).append((s_, k))
+    # address bar
+    bx, by, bw = x + 30 * U, y + 76 * U, w - 60 * U
+    rrect(c, bx, by, bw, 54 * U, 27 * U, rgb("#F6F0F2"))
+    url = ""
+    if "url" in st:
+        url, _ = typed(st["url"][0][0], st["url"][0][1] - 0.6, cps=12)
+    text(c, url or "Search or enter address", bx + 30 * U, by + 27 * U, size=26 * U, font="code",
+         fill=INK if url else rgb(B, "ink", 0.35), align="left")
+    # chat column, newest at the bottom; older messages scroll up
+    cx0, cw = x + 40 * U, w - 80 * U
+    msgs = []
+    for kind, s_, k in its:
+        if kind in ("attach", "you", "claude", "install", "styles"):
+            msgs.append((kind, s_, k))
+    blocks = []
+    for kind, s_, k in msgs:
+        size = 28 * U
+        if kind == "attach":
+            blocks.append((kind, s_, k, 86 * U))
+        elif kind == "you":
+            ln = wrap(s_, size, cw * 0.7 - 52 * U, "body")
+            blocks.append((kind, ln, k, len(ln) * size * 1.35 + 30 * U))
+        elif kind == "claude":
+            ln = wrap(s_, size, cw * 0.85 - 52 * U, "body")
+            blocks.append((kind, ln, k, len(ln) * size * 1.35 + 30 * U))
+        elif kind == "install":
+            blocks.append((kind, None, k, 4 * 46 * U + 90 * U))
+        elif kind == "styles":
+            blocks.append((kind, None, k, 400 * U))
+    top, bottom = by + 80 * U, y + h - 110 * U
+    total = sum(b[3] + 22 * U for b in blocks)
+    cy = bottom - total
+    c.save()
+    c.clipRect(skia.Rect.MakeXYWH(x, top, w, bottom - top))
+    for kind, data, k, bh in blocks:
+        ka = clamp(k * 3)
+        yy = cy + (1 - ease_out_cubic(clamp(k * 3))) * 30 * U
+        if kind == "attach":
+            ww = text_width(data, 24 * U, "code") + 130 * U
+            xx = cx0 + cw - ww
+            rrect(c, xx, yy, ww, bh, 18 * U, CREAM)
+            rrect(c, xx, yy, ww, bh, 18 * U, rgb(B, "ink", 0.2), stroke=2 * U)
+            file_icon(c, xx + 18 * U, yy + 14 * U, 58 * U, BLUE, "ZIP")
+            text(c, data, xx + 96 * U, yy + bh / 2, size=24 * U, font="code", fill=INK, align="left", alpha=ka)
+        elif kind == "you":
+            sh = data
+            bw_ = max(text_width(l_, 28 * U, "body") for l_ in sh) + 52 * U
+            bubble(c, cx0 + cw - bw_, yy, bw_, sh, 28 * U, PINK, NIGHT)
+        elif kind == "claude":
+            bw_ = max(text_width(l_, 28 * U, "body") for l_ in data) + 52 * U
+            bubble(c, cx0, yy, bw_, data, 28 * U, rgb("#F3EEF0"), INK)
+        elif kind == "install":
+            rrect(c, cx0, yy, cw * 0.92, bh, 22 * U, rgb("#F3EEF0"))
+            text(c, "Installing the skills…", cx0 + 26 * U, yy + 36 * U, size=28 * U, font="body", fill=INK,
+                 align="left")
+            for j, nm in enumerate(SKILL_NAMES):
+                kj = clamp((k - 0.6 - j * 0.45) * 3)
+                col, row = j % 2, j // 2
+                px, py = cx0 + 30 * U + col * cw * 0.45, yy + 90 * U + row * 46 * U
+                check(c, px, py, 26 * U, PINK, kj)
+                text(c, nm, px + 40 * U, py, size=26 * U, font="body", fill=INK, align="left",
+                     alpha=0.35 + 0.65 * kj)
+        elif kind == "styles":
+            img = image("raw/styles_egg.png")
+            ih = bh - 20 * U
+            iw = ih * img.width() / img.height()
+            rrect(c, cx0, yy, iw + 20 * U, bh, 18 * U, rgb("#F3EEF0"))
+            draw_image(c, img, cx0 + 10 * U, yy + 10 * U, iw, ih, cover=False)
+        cy += bh + 22 * U
+    c.restore()
+    # input box
+    iy = y + h - 90 * U
+    rrect(c, x + 30 * U, iy, w - 60 * U, 64 * U, 32 * U, rgb("#F6F0F2"))
+    pending = ""
+    for kind, s_, k in its:
+        if kind == "you" and k < 1.2:
+            pending, _ = typed(s_, k, cps=26)
+    text(c, pending or "Reply to Claude…", x + 64 * U, iy + 32 * U, size=26 * U, font="body",
+         fill=INK if pending else rgb(B, "ink", 0.35), align="left")
+    # note pill under the window
+    if "note" in st and key == "open":
+        s_, k = st["note"][-1]
+        sticker(c, s_, x + w / 2, y + h / 2, 32 * U, ease_out_back(prog(k, 0, 0.4)), fill=CREAM, rot=0, font="code")
+    # repository dialog
+    if "repo" in st and "install" not in st:
+        name, k = st["repo"][0]
+        kd = ease_out_back(prog(k, 0, 0.45))
+        dw, dh = 640 * U, 360 * U
+        c.save()
+        c.translate(x + w / 2, y + h / 2)
+        c.scale(kd, kd)
+        c.drawRect(skia.Rect.MakeXYWH(-w / 2, -h / 2, w, h), skia.Paint(Color=rgb(B, "night", 0.25)))
+        shadow(c, -dw / 2, -dh / 2, dw, dh, 26 * U, blur=30 * U, alpha=0.3)
+        rrect(c, -dw / 2, -dh / 2, dw, dh, 26 * U, WHITE)
+        text(c, "New repository", -dw / 2 + 40 * U, -dh / 2 + 56 * U, size=36 * U, font="mono", fill=INK,
+             align="left")
+        rrect(c, -dw / 2 + 40 * U, -dh / 2 + 100 * U, dw - 80 * U, 64 * U, 14 * U, rgb("#F6F0F2"))
+        nm, _ = typed(name, k - 0.4, cps=14)
+        text(c, nm, -dw / 2 + 64 * U, -dh / 2 + 132 * U, size=28 * U, font="code", fill=INK, align="left")
+        on = ease_in_out_cubic(prog(k, 2.4, 0.3))
+        text(c, "Private", -dw / 2 + 40 * U, -dh / 2 + 220 * U, size=30 * U, font="body", fill=INK, align="left")
+        tx = dw / 2 - 140 * U
+        rrect(c, tx, -dh / 2 + 200 * U, 96 * U, 46 * U, 23 * U, PINK if on > 0.5 else rgb(B, "ink", 0.2))
+        c.drawCircle(tx + lerp(23, 73, on) * U, -dh / 2 + 223 * U, 18 * U, skia.Paint(Color=WHITE, AntiAlias=True))
+        bwid = 180 * U
+        press = 1 - 0.06 * clamp(1 - abs(k - 3.6) * 4)
+        rrect(c, dw / 2 - 40 * U - bwid * press, dh / 2 - 90 * U, bwid * press, 60 * U, 30 * U, NIGHT)
+        text(c, "Create", dw / 2 - 40 * U - bwid * press / 2, dh / 2 - 60 * U, size=28 * U, font="mono",
+             fill=CREAM)
+        c.restore()
+    # permission prompt
+    if "allow" in st:
+        s_, k = st["allow"][0]
+        if k < 3.2:
+            ka = ease_out_back(prog(k, 0, 0.4)) * (1 - ease_out_cubic(prog(k, 2.7, 0.4)))
+            pw, ph = 560 * U, 170 * U
+            c.save()
+            c.translate(x + w / 2, y + h - 200 * U)
+            c.scale(ka, ka)
+            shadow(c, -pw / 2, -ph / 2, pw, ph, 22 * U, blur=24 * U, alpha=0.3)
+            rrect(c, -pw / 2, -ph / 2, pw, ph, 22 * U, WHITE)
+            rrect(c, -pw / 2, -ph / 2, pw, ph, 22 * U, PINK, stroke=4 * U)
+            text(c, "Claude wants to save the skills", 0, -ph / 2 + 46 * U, size=28 * U, font="body", fill=INK)
+            press = 1 - 0.08 * clamp(1 - abs(k - 1.6) * 4)
+            rrect(c, -90 * U * press, 10 * U, 180 * U * press, 56 * U, 28 * U, PINK)
+            text(c, "Allow", 0, 38 * U, size=28 * U, font="mono", fill=NIGHT)
+            c.restore()
+
+
 VIEWS = {"title": v_title, "checklist": v_checklist, "files": v_files, "terminal": v_terminal,
-         "finder": v_finder, "explorer": v_explorer, "chat": v_chat, "tips": v_tips, "end": v_end}
+         "finder": v_finder, "explorer": v_explorer, "chat": v_chat, "tips": v_tips, "end": v_end,
+         "web": v_web}
 
 
 def draw(c, t):
